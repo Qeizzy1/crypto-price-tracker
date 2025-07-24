@@ -3,52 +3,163 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Prices</title>
+<title>Crypto Price Tracker - Dexscreener Style</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
-  table { border-collapse: collapse; width: 100%; max-width: 600px; margin: auto; background: white; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-  th { background-color: #4CAF50; color: white; }
-  caption { font-size: 1.5em; margin-bottom: 10px; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #121212;
+    color: #e0e0e0;
+    margin: 0; padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #00ff9f;
+  }
+  table {
+    width: 100%;
+    max-width: 900px;
+    margin: auto;
+    border-collapse: collapse;
+    background: #1e1e1e;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td {
+    padding: 12px 15px;
+    text-align: left;
+  }
+  th {
+    background: #272727;
+    font-weight: 600;
+  }
+  tr:hover {
+    background: #333;
+  }
+  tr + tr {
+    border-top: 1px solid #2a2a2a;
+  }
+  .coin-logo {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    border-radius: 12px;
+    margin-right: 10px;
+  }
+  .price-change {
+    font-weight: 600;
+  }
+  .up {
+    color: #4caf50;
+  }
+  .down {
+    color: #f44336;
+  }
+  @media (max-width: 600px) {
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+    th {
+      text-align: right;
+      padding-right: 50%;
+      position: relative;
+    }
+    th::after {
+      content: ":";
+      position: absolute;
+      right: 10px;
+    }
+    td {
+      padding-left: 50%;
+      text-align: right;
+      position: relative;
+    }
+    td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 15px;
+      font-weight: 600;
+      text-align: left;
+    }
+  }
 </style>
 </head>
 <body>
+  <h1>Crypto Price Tracker</h1>
   <table>
-    <caption>Crypto Prices (USD)</caption>
     <thead>
-      <tr><th>Coin</th><th>Price (USD)</th></tr>
+      <tr>
+        <th>Coin</th>
+        <th>Price (USD)</th>
+        <th>24h Change</th>
+      </tr>
     </thead>
-    <tbody id="prices-body">
-      <tr><td colspan="2">Loading...</td></tr>
+    <tbody id="price-table-body">
+      <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
     </tbody>
   </table>
 
-  <script>
-    const pricesUrl = 'https://raw.githubusercontent.com/<your-username>/crypto-price-tracker/main/prices.json';
+<script>
+  const coins = [
+    "bitcoin",
+    "ethereum",
+    "binancecoin",
+    "ripple",
+    "cardano",
+    "solana",
+    "dogecoin",
+    "polkadot",
+    "litecoin",
+    "chainlink"
+  ];
 
-    async function fetchPrices() {
-      try {
-        const res = await fetch(pricesUrl);
-        const data = await res.json();
-        const tbody = document.getElementById('prices-body');
-        tbody.innerHTML = '';
-        for (const [coin, info] of Object.entries(data)) {
-          const tr = document.createElement('tr');
-          const coinTd = document.createElement('td');
-          const priceTd = document.createElement('td');
-          coinTd.textContent = coin;
-          priceTd.textContent = info.usd ? `$${info.usd.toFixed(4)}` : 'N/A';
-          tr.appendChild(coinTd);
-          tr.appendChild(priceTd);
-          tbody.appendChild(tr);
-        }
-      } catch (error) {
-        document.getElementById('prices-body').innerHTML = '<tr><td colspan="2">Failed to load data</td></tr>';
-      }
+  async function fetchPrices() {
+    const ids = coins.join(',');
+    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&price_change_percentage=24h`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const tbody = document.getElementById('price-table-body');
+      tbody.innerHTML = '';
+
+      data.forEach(coin => {
+        const tr = document.createElement('tr');
+
+        // Coin with logo and name
+        const coinTd = document.createElement('td');
+        coinTd.setAttribute('data-label', 'Coin');
+        const img = document.createElement('img');
+        img.src = coin.image;
+        img.alt = coin.name;
+        img.className = 'coin-logo';
+        coinTd.appendChild(img);
+        coinTd.appendChild(document.createTextNode(coin.name));
+        tr.appendChild(coinTd);
+
+        // Price
+        const priceTd = document.createElement('td');
+        priceTd.setAttribute('data-label', 'Price (USD)');
+        priceTd.textContent = `$${coin.current_price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:6})}`;
+        tr.appendChild(priceTd);
+
+        // 24h change with color
+        const changeTd = document.createElement('td');
+        changeTd.setAttribute('data-label', '24h Change');
+        const change = coin.price_change_percentage_24h;
+        changeTd.textContent = (change ? change.toFixed(2) : '0') + '%';
+        changeTd.className = 'price-change ' + (change >= 0 ? 'up' : 'down');
+        tr.appendChild(changeTd);
+
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      document.getElementById('price-table-body').innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Failed to load data</td></tr>`;
     }
+  }
 
-    fetchPrices();
-    setInterval(fetchPrices, 60000); // Refresh every 60 seconds
-  </script>
+  fetchPrices();
+  setInterval(fetchPrices, 60000); // refresh every 60 seconds
+</script>
 </body>
 </html>
