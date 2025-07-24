@@ -1,165 +1,288 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Crypto Price Tracker - Dexscreener Style</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #121212;
-    color: #e0e0e0;
-    margin: 0; padding: 20px;
-  }
-  h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #00ff9f;
-  }
-  table {
-    width: 100%;
-    max-width: 900px;
-    margin: auto;
-    border-collapse: collapse;
-    background: #1e1e1e;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  th, td {
-    padding: 12px 15px;
-    text-align: left;
-  }
-  th {
-    background: #272727;
-    font-weight: 600;
-  }
-  tr:hover {
-    background: #333;
-  }
-  tr + tr {
-    border-top: 1px solid #2a2a2a;
-  }
-  .coin-logo {
-    width: 24px;
-    height: 24px;
-    vertical-align: middle;
-    border-radius: 12px;
-    margin-right: 10px;
-  }
-  .price-change {
-    font-weight: 600;
-  }
-  .up {
-    color: #4caf50;
-  }
-  .down {
-    color: #f44336;
-  }
-  @media (max-width: 600px) {
-    table, thead, tbody, th, td, tr {
-      display: block;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dexscreener-Style Crypto Tracker</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+    body {
+      margin: 0;
+      background-color: #0b0f17;
+      color: #cbd5e1;
+      font-family: 'Roboto', sans-serif;
+      padding: 20px;
+      user-select: none;
     }
-    th {
-      text-align: right;
-      padding-right: 50%;
+
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #14f195;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+
+    table {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background-color: #121826;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(20, 241, 149, 0.25);
+    }
+
+    thead tr {
+      background: linear-gradient(90deg, #0bbd7e, #14f195);
+      color: #fff;
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      user-select: none;
+    }
+
+    thead th {
+      padding: 16px 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
       position: relative;
     }
-    th::after {
-      content: ":";
+    thead th:hover {
+      background-color: #0aaf73;
+    }
+
+    thead th.sort-asc::after,
+    thead th.sort-desc::after {
+      content: '';
       position: absolute;
       right: 10px;
+      border: 6px solid transparent;
     }
-    td {
-      padding-left: 50%;
-      text-align: right;
-      position: relative;
+
+    thead th.sort-asc::after {
+      border-bottom-color: #fff;
+      top: 50%;
+      transform: translateY(-50%);
     }
-    td::before {
-      content: attr(data-label);
-      position: absolute;
-      left: 15px;
+
+    thead th.sort-desc::after {
+      border-top-color: #fff;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #2a2f4a;
+      transition: background-color 0.2s ease;
+    }
+    tbody tr:hover {
+      background-color: #1e253b;
+    }
+
+    tbody td {
+      padding: 14px 12px;
+      font-size: 15px;
+      vertical-align: middle;
+    }
+
+    .coin-name {
+      display: flex;
+      align-items: center;
+    }
+
+    .coin-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-right: 10px;
+      image-rendering: pixelated;
+    }
+
+    .price-change {
       font-weight: 600;
-      text-align: left;
+      font-size: 14px;
+      text-align: right;
+      width: 90px;
     }
-  }
-</style>
+
+    .up {
+      color: #4ade80;
+    }
+
+    .down {
+      color: #f87171;
+    }
+
+    .price, .market-cap, .volume {
+      text-align: right;
+      white-space: nowrap;
+      font-feature-settings: 'tnum';
+    }
+
+    /* Responsive */
+    @media (max-width: 720px) {
+      body {
+        padding: 10px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      .price-change {
+        width: 70px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Crypto Price Tracker</h1>
-  <table>
+  <h1>Dexscreener-Style Crypto Tracker</h1>
+  <table id="crypto-table" aria-label="Cryptocurrency Prices">
     <thead>
       <tr>
-        <th>Coin</th>
-        <th>Price (USD)</th>
-        <th>24h Change</th>
+        <th data-key="name">Coin</th>
+        <th data-key="current_price" class="sortable">Price (USD)</th>
+        <th data-key="price_change_percentage_24h" class="sortable">24h Change</th>
+        <th data-key="market_cap" class="sortable">Market Cap</th>
+        <th data-key="total_volume" class="sortable">Volume (24h)</th>
       </tr>
     </thead>
-    <tbody id="price-table-body">
-      <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+    <tbody>
+      <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading data…</td></tr>
     </tbody>
   </table>
 
-<script>
-  const coins = [
-    "bitcoin",
-    "ethereum",
-    "binancecoin",
-    "ripple",
-    "cardano",
-    "solana",
-    "dogecoin",
-    "polkadot",
-    "litecoin",
-    "chainlink"
-  ];
+  <script>
+    const coins = [
+      "bitcoin", "ethereum", "binancecoin", "ripple", "cardano", "solana", "dogecoin",
+      "polkadot", "litecoin", "chainlink", "uniswap", "stellar", "vechain", "tron",
+      "filecoin", "monero", "tezos", "eos", "theta-token", "algorand", "avalanche-2",
+      "cosmos", "bitcoin-cash", "terra-luna", "aave", "compound-governance-token",
+      "pancakeswap-token", "neo", "dash", "zilliqa", "maker", "celsius-degree-token",
+      "elrond-erd-2", "huobi-token", "hedera-hashgraph", "okb", "fantom", "decentraland",
+      "chiliz", "kusama", "helium", "the-graph", "osmosis", "flow", "render-token",
+      "basic-attention-token", "bitTorrent", "decred", "enjincoin"
+    ];
 
-  async function fetchPrices() {
-    const ids = coins.join(',');
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&price_change_percentage=24h`;
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
+    let sortKey = 'market_cap';
+    let sortAsc = false;
 
-      const tbody = document.getElementById('price-table-body');
+    async function fetchPrices() {
+      const ids = coins.join(',');
+      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&price_change_percentage=24h`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        return data;
+      } catch (e) {
+        console.error('Failed to fetch data', e);
+        return null;
+      }
+    }
+
+    function formatNumber(num) {
+      if (num === null || num === undefined) return '-';
+      if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+      if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+      return num.toLocaleString(undefined, {maximumFractionDigits: 2});
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector('#crypto-table tbody');
       tbody.innerHTML = '';
 
       data.forEach(coin => {
         const tr = document.createElement('tr');
 
-        // Coin with logo and name
-        const coinTd = document.createElement('td');
-        coinTd.setAttribute('data-label', 'Coin');
+        // Coin name & logo
+        const tdName = document.createElement('td');
+        tdName.className = 'coin-name';
         const img = document.createElement('img');
         img.src = coin.image;
-        img.alt = coin.name;
+        img.alt = coin.name + ' logo';
         img.className = 'coin-logo';
-        coinTd.appendChild(img);
-        coinTd.appendChild(document.createTextNode(coin.name));
-        tr.appendChild(coinTd);
+        tdName.appendChild(img);
+        tdName.appendChild(document.createTextNode(coin.name));
+        tr.appendChild(tdName);
 
         // Price
-        const priceTd = document.createElement('td');
-        priceTd.setAttribute('data-label', 'Price (USD)');
-        priceTd.textContent = `$${coin.current_price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:6})}`;
-        tr.appendChild(priceTd);
+        const tdPrice = document.createElement('td');
+        tdPrice.className = 'price';
+        tdPrice.textContent = `$${coin.current_price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:6})}`;
+        tr.appendChild(tdPrice);
 
-        // 24h change with color
-        const changeTd = document.createElement('td');
-        changeTd.setAttribute('data-label', '24h Change');
-        const change = coin.price_change_percentage_24h;
-        changeTd.textContent = (change ? change.toFixed(2) : '0') + '%';
-        changeTd.className = 'price-change ' + (change >= 0 ? 'up' : 'down');
-        tr.appendChild(changeTd);
+        // 24h Change
+        const tdChange = document.createElement('td');
+        tdChange.className = 'price-change ' + (coin.price_change_percentage_24h >= 0 ? 'up' : 'down');
+        tdChange.textContent = (coin.price_change_percentage_24h ? coin.price_change_percentage_24h.toFixed(2) : '0.00') + '%';
+        tr.appendChild(tdChange);
+
+        // Market Cap
+        const tdMarketCap = document.createElement('td');
+        tdMarketCap.className = 'market-cap';
+        tdMarketCap.textContent = `$${formatNumber(coin.market_cap)}`;
+        tr.appendChild(tdMarketCap);
+
+        // Volume 24h
+        const tdVolume = document.createElement('td');
+        tdVolume.className = 'volume';
+        tdVolume.textContent = `$${formatNumber(coin.total_volume)}`;
+        tr.appendChild(tdVolume);
 
         tbody.appendChild(tr);
       });
-    } catch (e) {
-      document.getElementById('price-table-body').innerHTML = `<tr><td colspan="3" style="text-align:center; color:red;">Failed to load data</td></tr>`;
     }
-  }
 
-  fetchPrices();
-  setInterval(fetchPrices, 60000); // refresh every 60 seconds
-</script>
+    function sortData(data, key, asc) {
+      return data.slice().sort((a, b) => {
+        const valA = a[key] ?? 0;
+        const valB = b[key] ?? 0;
+        if (typeof valA === 'string') return asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        return asc ? valA - valB : valB - valA;
+      });
+    }
+
+    function updateSortIndicators() {
+      document.querySelectorAll('thead th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.key === sortKey) {
+          th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+        }
+      });
+    }
+
+    async function loadAndRender() {
+      const data = await fetchPrices();
+      if (!data) {
+        const tbody = document.querySelector('#crypto-table tbody');
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #f87171;">Failed to load data</td></tr>`;
+        return;
+      }
+      const sorted = sortData(data, sortKey, sortAsc);
+      renderTable(sorted);
+      updateSortIndicators();
+    }
+
+    document.querySelectorAll('thead th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (key === sortKey) {
+          sortAsc = !sortAsc;
+        } else {
+          sortKey = key;
+          sortAsc = true;
+        }
+        loadAndRender();
+      });
+    });
+
+    loadAndRender();
+    setInterval(loadAndRender, 60000); // refresh every 60 seconds
+  </script>
 </body>
 </html>
