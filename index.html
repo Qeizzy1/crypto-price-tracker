@@ -3,86 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>moonLive - Crypto Insights</title>
+  <title>VexApi - Crypto Insights</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap');
 
     body {
       margin: 0;
-      background-color: #fff;
-      color: #b91c1c; /* Red text */
-      font-family: 'Roboto', sans-serif;
-      padding: 20px;
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
+      color: #d32f2f; /* Strong red */
       user-select: none;
+      padding: 30px 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
-      font-weight: 900;
-      font-size: 2.8rem;
-      color: #b91c1c;
+      font-weight: 700;
+      font-size: 3rem;
+      margin-bottom: 40px;
       letter-spacing: 2px;
+      color: #d32f2f;
+      text-transform: uppercase;
+      user-select: none;
     }
 
     .container {
       display: flex;
       justify-content: space-between;
-      gap: 20px;
-      max-width: 1200px;
+      gap: 24px;
+      max-width: 1250px;
       margin: 0 auto;
     }
 
     table {
+      border-collapse: separate;
+      border-spacing: 0 10px;
       width: 100%;
-      border-collapse: collapse;
-      box-shadow: 0 2px 8px rgba(185, 28, 28, 0.15);
-      border-radius: 8px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgb(211 47 47 / 0.15);
       overflow: hidden;
+      user-select: none;
     }
 
-    thead {
-      background-color: #b91c1c;
-      color: white;
+    thead tr {
+      background: #d32f2f;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-transform: uppercase;
       user-select: none;
     }
 
     thead th {
-      padding: 12px 10px;
-      font-weight: 700;
+      padding: 14px 16px;
       text-align: left;
-      font-size: 1rem;
     }
 
-    tbody tr:nth-child(even) {
-      background-color: #fee2e2; /* light red/pink */
+    tbody tr {
+      background: #fff;
+      cursor: default;
+      transition: background-color 0.2s ease;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgb(211 47 47 / 0.1);
     }
 
     tbody tr:hover {
-      background-color: #fca5a5; /* brighter red */
-      cursor: default;
+      background-color: #fdecea;
+      box-shadow: 0 4px 12px rgb(211 47 47 / 0.25);
     }
 
     tbody td {
-      padding: 10px;
-      font-size: 0.9rem;
+      padding: 14px 16px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #b71c1c;
     }
 
     .coin-name {
-      font-weight: 600;
+      font-weight: 700;
+      color: #d32f2f;
     }
 
     .price-change {
       font-weight: 700;
       text-align: right;
-      color: #b91c1c;
+      color: #d32f2f;
+      user-select: none;
     }
 
     .price-change.up {
-      color: #047857; /* green for positive */
+      color: #388e3c; /* green */
     }
 
-    @media (max-width: 900px) {
+    /* Responsive */
+    @media (max-width: 1100px) {
       .container {
         flex-direction: column;
       }
@@ -93,20 +110,18 @@
   </style>
 </head>
 <body>
-  <h1>moonLive Crypto Insights</h1>
+  <h1>moonLive</h1>
   <div class="container">
-    <!-- Newly Created -->
     <table aria-label="Newly Created Coins">
       <thead>
         <tr><th colspan="2">Newly Created Coins</th></tr>
-        <tr><th>Name</th><th>Created Date</th></tr>
+        <tr><th>Name</th><th>Market Cap</th></tr>
       </thead>
       <tbody id="newlyCreatedBody">
         <tr><td colspan="2" style="text-align:center;">Loading...</td></tr>
       </tbody>
     </table>
 
-    <!-- About to Pump -->
     <table aria-label="Coins About to Pump">
       <thead>
         <tr><th colspan="2">Coins About to Pump</th></tr>
@@ -117,11 +132,10 @@
       </tbody>
     </table>
 
-    <!-- Market Cap > 50k -->
     <table aria-label="Coins with Market Cap over 50k">
       <thead>
-        <tr><th colspan="2">Coins with Market Cap &gt; 50k</th></tr>
-        <tr><th>Name</th><th>Market Cap (USD)</th></tr>
+        <tr><th colspan="2">Market Cap &gt; 50k</th></tr>
+        <tr><th>Name</th><th>Market Cap</th></tr>
       </thead>
       <tbody id="marketCapBody">
         <tr><td colspan="2" style="text-align:center;">Loading...</td></tr>
@@ -142,12 +156,6 @@
     }
   }
 
-  function formatDate(isoDateStr) {
-    if (!isoDateStr) return '-';
-    const d = new Date(isoDateStr);
-    return d.toLocaleDateString();
-  }
-
   function formatNumber(num) {
     if (!num) return '-';
     return num.toLocaleString(undefined, {maximumFractionDigits: 0});
@@ -156,17 +164,14 @@
   async function populateTables() {
     const data = await fetchCoins();
     if (!data) {
-      document.getElementById('newlyCreatedBody').innerHTML = `<tr><td colspan="2" style="color:#b91c1c; text-align:center;">Failed to load</td></tr>`;
-      document.getElementById('pumpBody').innerHTML = `<tr><td colspan="2" style="color:#b91c1c; text-align:center;">Failed to load</td></tr>`;
-      document.getElementById('marketCapBody').innerHTML = `<tr><td colspan="2" style="color:#b91c1c; text-align:center;">Failed to load</td></tr>`;
+      document.getElementById('newlyCreatedBody').innerHTML = `<tr><td colspan="2" style="color:#d32f2f; text-align:center;">Failed to load</td></tr>`;
+      document.getElementById('pumpBody').innerHTML = `<tr><td colspan="2" style="color:#d32f2f; text-align:center;">Failed to load</td></tr>`;
+      document.getElementById('marketCapBody').innerHTML = `<tr><td colspan="2" style="color:#d32f2f; text-align:center;">Failed to load</td></tr>`;
       return;
     }
 
-    // Newly Created - use 'genesis_date' from coin details - but markets API doesn't include that
-    // So we need to fetch coin details per coin (costly, so we'll just simulate by filtering coins with low market cap and recent addition)
-    // Instead, we'll use coins with low market cap and sort by market cap ascending, and treat them as "newly created" for demo.
     const newlyCreated = data
-      .filter(c => c.market_cap && c.market_cap < 500000) // low market cap as proxy
+      .filter(c => c.market_cap && c.market_cap < 500000)
       .slice(0, 15);
 
     const pumpCoins = data
@@ -177,7 +182,6 @@
       .filter(c => c.market_cap && c.market_cap > 50000)
       .slice(0, 15);
 
-    // Populate Newly Created table
     const newlyBody = document.getElementById('newlyCreatedBody');
     newlyBody.innerHTML = '';
     newlyCreated.forEach(coin => {
@@ -185,15 +189,13 @@
       const tdName = document.createElement('td');
       tdName.textContent = coin.name;
       tdName.className = 'coin-name';
-      const tdDate = document.createElement('td');
-      // no creation date in API, show market cap as proxy
-      tdDate.textContent = `$${formatNumber(coin.market_cap)}`;
+      const tdMc = document.createElement('td');
+      tdMc.textContent = `$${formatNumber(coin.market_cap)}`;
       tr.appendChild(tdName);
-      tr.appendChild(tdDate);
+      tr.appendChild(tdMc);
       newlyBody.appendChild(tr);
     });
 
-    // Populate Pump Coins table
     const pumpBody = document.getElementById('pumpBody');
     pumpBody.innerHTML = '';
     pumpCoins.forEach(coin => {
@@ -209,7 +211,6 @@
       pumpBody.appendChild(tr);
     });
 
-    // Populate Market Cap > 50k table
     const mcBody = document.getElementById('marketCapBody');
     mcBody.innerHTML = '';
     marketCapCoins.forEach(coin => {
@@ -226,7 +227,6 @@
   }
 
   populateTables();
-  // Optional: refresh every 30 seconds
   setInterval(populateTables, 30000);
 </script>
 
