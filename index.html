@@ -2,226 +2,162 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VexApi - Crypto Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VexApi</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap');
-
     body {
       margin: 0;
-      background-color: #0a1a2a;
-      color: #e0e0e0;
-      font-family: 'Poppins', sans-serif;
-      user-select: none;
-      padding: 40px 20px;
+      font-family: Arial, sans-serif;
+      background-color: #0d1b2a;
+      color: #fff;
     }
-
-    h1 {
+    header {
+      background-color: #1b263b;
+      padding: 20px;
       text-align: center;
-      font-weight: 700;
-      font-size: 3rem;
-      margin-bottom: 40px;
-      color: #7a8a99;
-      letter-spacing: 3px;
-      text-transform: uppercase;
+      font-size: 2rem;
+      font-weight: bold;
     }
-
-    table {
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-      border-collapse: separate;
-      border-spacing: 0 12px;
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
     }
-
-    thead tr {
-      background-color: #4a4f58;
-      color: #f0f0f0;
-      text-transform: uppercase;
-      font-weight: 700;
-      font-size: 1rem;
-      letter-spacing: 1.5px;
-    }
-
-    thead th {
-      padding: 14px 12px;
-      text-align: left;
-      border-radius: 8px 8px 0 0;
-    }
-
-    tbody tr {
-      background-color: #15243f;
-      transition: background-color 0.3s ease;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgb(0 0 0 / 0.25);
-      cursor: pointer;
-    }
-
-    tbody tr:hover {
-      background-color: #2c3e6f;
-    }
-
-    tbody td {
-      padding: 14px 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    .coin-name {
+    .card {
+      background-color: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 10px;
     }
-
-    .coin-logo {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-    }
-
-    .price-change {
-      font-weight: 700;
-      color: #ff6666;
-    }
-
-    .price-change.up {
-      color: #7fff7f;
-    }
-
     .btn {
-      display: inline-block;
-      background-color: #5a616d;
-      color: #e0e0e0;
+      background-color: #475569;
+      color: #fff;
+      padding: 8px 14px;
       border: none;
-      padding: 10px 20px;
-      font-weight: 600;
       border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-      text-decoration: none;
-      margin: 12px 8px;
     }
-
-    .btn:hover {
-      background-color: #788492;
+    input {
+      background-color: #1e293b;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      width: 100%;
     }
-
-    .btn-container {
-      max-width: 1100px;
-      margin: 30px auto;
-      text-align: center;
-    }
-
-    @media (max-width: 768px) {
-      table {
-        font-size: 0.85rem;
-      }
+    label {
+      margin-top: 10px;
+      display: block;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <h1>VexApi</h1>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Coin</th>
-        <th>Price</th>
-        <th>24h Change</th>
-        <th>Market Cap</th>
-      </tr>
-    </thead>
-    <tbody id="coinTableBody">
-      <tr><td colspan="4" style="text-align:center; color:#ff6666;">Loading...</td></tr>
-    </tbody>
-  </table>
+<header>VexApi</header>
 
-  <div class="btn-container">
-    <button class="btn" id="refreshBtn">Refresh Data</button>
-    <a href="https://pump.fun/" class="btn" target="_blank">Create Your Own Coin</a>
-  </div>
+<div class="container" id="coin-list">
+  <h2>Top Coins</h2>
+</div>
 
-  <script>
-    const tbody = document.getElementById('coinTableBody');
-    const refreshBtn = document.getElementById('refreshBtn');
+<div class="container">
+  <h2>Create Your Own Token (Free on Devnet)</h2>
+  <label>Name:
+    <input id="tokenName" type="text" placeholder="MyToken" />
+  </label>
+  <label>Symbol:
+    <input id="tokenSymbol" type="text" placeholder="MTK" />
+  </label>
+  <label>Supply:
+    <input id="tokenSupply" type="number" placeholder="1000000" />
+  </label>
+  <button class="btn" onclick="createToken()">Create Token</button>
+  <p id="status" style="margin-top:10px; color:lightgreen;"></p>
+</div>
 
-    async function fetchCoins() {
-      try {
-        const res = await fetch(
-          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=24h'
-        );
-        return await res.json();
-      } catch (err) {
-        console.error('Error:', err);
-        return null;
-      }
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+<script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.js"></script>
+<script>
+  // Fetch top coins from CoinGecko
+  async function fetchCoins() {
+    const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1');
+    const coins = await res.json();
+    const list = document.getElementById("coin-list");
+    coins.forEach(coin => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div>
+          <strong>${coin.name}</strong> (${coin.symbol.toUpperCase()})<br>
+          $${coin.current_price.toLocaleString()}
+        </div>
+        <button class="btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}','_blank')">Dexscreener</button>
+      `;
+      list.appendChild(card);
+    });
+  }
+  fetchCoins();
+
+  // Token creation
+  async function createToken() {
+    const status = document.getElementById('status');
+    status.innerText = "Connecting to Phantom...";
+
+    if (!window.solana || !window.solana.isPhantom) {
+      alert("Please install Phantom wallet");
+      return;
     }
 
-    function formatNumber(num) {
-      return num ? num.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-';
+    await window.solana.connect();
+    const connection = new solanaWeb3.Connection("https://api.devnet.solana.com", "confirmed");
+    const fromPubkey = window.solana.publicKey;
+    const payer = fromPubkey;
+
+    const tokenName = document.getElementById("tokenName").value.trim();
+    const tokenSymbol = document.getElementById("tokenSymbol").value.trim();
+    const supply = parseInt(document.getElementById("tokenSupply").value);
+
+    if (!tokenName || !tokenSymbol || isNaN(supply)) {
+      status.innerText = "Please fill all fields.";
+      return;
     }
 
-    function formatPrice(num) {
-      if (num < 0.01) return num.toFixed(6);
-      if (num < 1) return num.toFixed(4);
-      return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    const mint = solanaWeb3.Keypair.generate();
+    const lamports = await solanaWeb3.Token.getMinBalanceRentForExemptMint(connection);
+    const transaction = new solanaWeb3.Transaction();
 
-    function createRow(coin) {
-      const tr = document.createElement('tr');
+    transaction.add(
+      solanaWeb3.SystemProgram.createAccount({
+        fromPubkey,
+        newAccountPubkey: mint.publicKey,
+        space: solanaWeb3.MINT_SIZE,
+        lamports,
+        programId: solanaWeb3.TOKEN_PROGRAM_ID,
+      }),
+      solanaWeb3.Token.createInitMintInstruction(
+        solanaWeb3.TOKEN_PROGRAM_ID,
+        mint.publicKey,
+        9,
+        fromPubkey,
+        null
+      )
+    );
 
-      tr.onclick = () => {
-        window.open(`https://dexscreener.com/search/${coin.symbol}`, '_blank');
-      };
+    const recentBlockhash = await connection.getRecentBlockhash();
+    transaction.recentBlockhash = recentBlockhash.blockhash;
+    transaction.feePayer = fromPubkey;
 
-      // Coin name and logo
-      const tdName = document.createElement('td');
-      tdName.className = 'coin-name';
-      const img = document.createElement('img');
-      img.src = coin.image;
-      img.alt = coin.name;
-      img.className = 'coin-logo';
-      tdName.appendChild(img);
-      tdName.appendChild(document.createTextNode(coin.name));
-      tr.appendChild(tdName);
+    transaction.partialSign(mint);
+    const signedTx = await window.solana.signTransaction(transaction);
+    const txid = await connection.sendRawTransaction(signedTx.serialize());
+    await connection.confirmTransaction(txid);
 
-      // Price
-      const tdPrice = document.createElement('td');
-      tdPrice.textContent = `$${formatPrice(coin.current_price)}`;
-      tr.appendChild(tdPrice);
+    status.innerText = `Token Created! Mint Address: ${mint.publicKey.toBase58()}`;
+  }
+</script>
 
-      // 24h Change
-      const tdChange = document.createElement('td');
-      tdChange.textContent = (coin.price_change_percentage_24h ?? 0).toFixed(2) + '%';
-      tdChange.className = 'price-change ' + (coin.price_change_percentage_24h >= 0 ? 'up' : '');
-      tr.appendChild(tdChange);
-
-      // Market Cap
-      const tdCap = document.createElement('td');
-      tdCap.textContent = `$${formatNumber(coin.market_cap)}`;
-      tr.appendChild(tdCap);
-
-      return tr;
-    }
-
-    async function updateTable() {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#ff6666;">Loading...</td></tr>';
-      const coins = await fetchCoins();
-      if (!coins) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#ff6666;">Error loading data</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = '';
-      coins.forEach((coin) => {
-        const row = createRow(coin);
-        tbody.appendChild(row);
-      });
-    }
-
-    refreshBtn.addEventListener('click', updateTable);
-    updateTable();
-    setInterval(updateTable, 30000);
-  </script>
 </body>
 </html>
