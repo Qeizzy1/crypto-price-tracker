@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crypto Prices</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
+  table { border-collapse: collapse; width: 100%; max-width: 600px; margin: auto; background: white; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+  th { background-color: #4CAF50; color: white; }
+  caption { font-size: 1.5em; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <table>
+    <caption>Crypto Prices (USD)</caption>
+    <thead>
+      <tr><th>Coin</th><th>Price (USD)</th></tr>
+    </thead>
+    <tbody id="prices-body">
+      <tr><td colspan="2">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const pricesUrl = 'https://raw.githubusercontent.com/<your-username>/crypto-price-tracker/main/prices.json';
+
+    async function fetchPrices() {
+      try {
+        const res = await fetch(pricesUrl);
+        const data = await res.json();
+        const tbody = document.getElementById('prices-body');
+        tbody.innerHTML = '';
+        for (const [coin, info] of Object.entries(data)) {
+          const tr = document.createElement('tr');
+          const coinTd = document.createElement('td');
+          const priceTd = document.createElement('td');
+          coinTd.textContent = coin;
+          priceTd.textContent = info.usd ? `$${info.usd.toFixed(4)}` : 'N/A';
+          tr.appendChild(coinTd);
+          tr.appendChild(priceTd);
+          tbody.appendChild(tr);
+        }
+      } catch (error) {
+        document.getElementById('prices-body').innerHTML = '<tr><td colspan="2">Failed to load data</td></tr>';
+      }
+    }
+
+    fetchPrices();
+    setInterval(fetchPrices, 60000); // Refresh every 60 seconds
+  </script>
+</body>
+</html>
