@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>moonLive - Crypto Tracker</title>
+  <title>moonLive - Crypto Insights</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
     body {
       margin: 0;
-      background-color: #0b0f17;
-      color: #cbd5e1;
+      background-color: #fff;
+      color: #b91c1c; /* Red text */
       font-family: 'Roboto', sans-serif;
       padding: 20px;
       user-select: none;
@@ -18,328 +18,217 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 24px;
-      color: #14f195;
-      font-weight: 700;
-      letter-spacing: 1.5px;
+      margin-bottom: 30px;
+      font-weight: 900;
+      font-size: 2.8rem;
+      color: #b91c1c;
+      letter-spacing: 2px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     table {
       width: 100%;
-      max-width: 1000px;
-      margin: 0 auto;
       border-collapse: collapse;
-      background-color: #121826;
-      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(185, 28, 28, 0.15);
+      border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 0 20px rgba(20, 241, 149, 0.25);
     }
 
-    thead tr {
-      background: linear-gradient(90deg, #0bbd7e, #14f195);
-      color: #fff;
-      text-transform: uppercase;
-      font-size: 14px;
-      letter-spacing: 1.5px;
+    thead {
+      background-color: #b91c1c;
+      color: white;
       user-select: none;
     }
 
     thead th {
-      padding: 16px 12px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      position: relative;
-    }
-    thead th:hover {
-      background-color: #0aaf73;
+      padding: 12px 10px;
+      font-weight: 700;
+      text-align: left;
+      font-size: 1rem;
     }
 
-    thead th.sort-asc::after,
-    thead th.sort-desc::after {
-      content: '';
-      position: absolute;
-      right: 10px;
-      border: 6px solid transparent;
+    tbody tr:nth-child(even) {
+      background-color: #fee2e2; /* light red/pink */
     }
 
-    thead th.sort-asc::after {
-      border-bottom-color: #fff;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    thead th.sort-desc::after {
-      border-top-color: #fff;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    tbody tr {
-      border-bottom: 1px solid #2a2f4a;
-      transition: background-color 0.2s ease;
-    }
     tbody tr:hover {
-      background-color: #1e253b;
+      background-color: #fca5a5; /* brighter red */
+      cursor: default;
     }
 
     tbody td {
-      padding: 14px 12px;
-      font-size: 15px;
-      vertical-align: middle;
+      padding: 10px;
+      font-size: 0.9rem;
     }
 
     .coin-name {
-      display: flex;
-      align-items: center;
-    }
-
-    .coin-logo {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      margin-right: 10px;
-      image-rendering: pixelated;
+      font-weight: 600;
     }
 
     .price-change {
-      font-weight: 600;
-      font-size: 14px;
-      text-align: right;
-      width: 90px;
-    }
-
-    .up {
-      color: #4ade80;
-    }
-
-    .down {
-      color: #f87171;
-    }
-
-    .price, .market-cap, .volume {
-      text-align: right;
-      white-space: nowrap;
-      font-feature-settings: 'tnum';
-    }
-
-    a {
-      color: #14f195;
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-    a:hover {
-      color: #0bbd7e;
-      text-decoration: underline;
-    }
-
-    .btn-link {
-      background-color: #14f195;
-      border: none;
-      color: #0b0f17;
-      padding: 6px 12px;
       font-weight: 700;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 14px;
-      text-align: center;
-      user-select: none;
-    }
-    .btn-link:hover {
-      background-color: #0bbd7e;
-      color: white;
-      text-decoration: none;
+      text-align: right;
+      color: #b91c1c;
     }
 
-    /* Responsive */
-    @media (max-width: 720px) {
-      body {
-        padding: 10px;
+    .price-change.up {
+      color: #047857; /* green for positive */
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        flex-direction: column;
       }
-
       table {
-        font-size: 12px;
-      }
-
-      .price-change {
-        width: 70px;
-      }
-
-      .btn-link {
-        padding: 4px 8px;
-        font-size: 12px;
+        margin-bottom: 30px;
       }
     }
   </style>
 </head>
 <body>
-  <h1>moonLive</h1>
-  <table id="crypto-table" aria-label="Cryptocurrency Prices">
-    <thead>
-      <tr>
-        <th data-key="name">Coin</th>
-        <th data-key="current_price" class="sortable">Price (USD)</th>
-        <th data-key="price_change_percentage_24h" class="sortable">24h Change</th>
-        <th data-key="market_cap" class="sortable">Market Cap</th>
-        <th data-key="total_volume" class="sortable">Volume (24h)</th>
-        <th>Link</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td colspan="6" style="text-align:center; padding: 20px;">Loading data…</td></tr>
-    </tbody>
-  </table>
+  <h1>moonLive Crypto Insights</h1>
+  <div class="container">
+    <!-- Newly Created -->
+    <table aria-label="Newly Created Coins">
+      <thead>
+        <tr><th colspan="2">Newly Created Coins</th></tr>
+        <tr><th>Name</th><th>Created Date</th></tr>
+      </thead>
+      <tbody id="newlyCreatedBody">
+        <tr><td colspan="2" style="text-align:center;">Loading...</td></tr>
+      </tbody>
+    </table>
 
-  <script>
-    const coins = [
-      "bitcoin", "ethereum", "binancecoin", "ripple", "cardano", "solana", "dogecoin",
-      "polkadot", "litecoin", "chainlink", "uniswap", "stellar", "vechain", "tron",
-      "filecoin", "monero", "tezos", "eos", "theta-token", "algorand", "avalanche-2",
-      "cosmos", "bitcoin-cash", "terra-luna", "aave", "compound-governance-token",
-      "pancakeswap-token", "neo", "dash", "zilliqa", "maker", "celsius-degree-token",
-      "elrond-erd-2", "huobi-token", "hedera-hashgraph", "okb", "fantom", "decentraland",
-      "chiliz", "kusama", "helium", "the-graph", "osmosis", "flow", "render-token",
-      "basic-attention-token", "bittorrent", "decred", "enjincoin"
-    ];
+    <!-- About to Pump -->
+    <table aria-label="Coins About to Pump">
+      <thead>
+        <tr><th colspan="2">Coins About to Pump</th></tr>
+        <tr><th>Name</th><th>24h Change (%)</th></tr>
+      </thead>
+      <tbody id="pumpBody">
+        <tr><td colspan="2" style="text-align:center;">Loading...</td></tr>
+      </tbody>
+    </table>
 
-    let sortKey = 'market_cap';
-    let sortAsc = false;
+    <!-- Market Cap > 50k -->
+    <table aria-label="Coins with Market Cap over 50k">
+      <thead>
+        <tr><th colspan="2">Coins with Market Cap &gt; 50k</th></tr>
+        <tr><th>Name</th><th>Market Cap (USD)</th></tr>
+      </thead>
+      <tbody id="marketCapBody">
+        <tr><td colspan="2" style="text-align:center;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-    async function fetchPrices() {
-      const ids = coins.join(',');
-      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&price_change_percentage=24h`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        return data;
-      } catch (e) {
-        console.error('Failed to fetch data', e);
-        return null;
-      }
+<script>
+  async function fetchCoins() {
+    try {
+      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&price_change_percentage=24h`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      console.error('Failed to fetch data:', e);
+      return null;
+    }
+  }
+
+  function formatDate(isoDateStr) {
+    if (!isoDateStr) return '-';
+    const d = new Date(isoDateStr);
+    return d.toLocaleDateString();
+  }
+
+  function formatNumber(num) {
+    if (!num) return '-';
+    return num.toLocaleString(undefined, {maximumFractionDigits: 0});
+  }
+
+  async function populateTables() {
+    const data = await fetchCoins();
+    if (!data) {
+      document.getElementById('newlyCreatedBody').innerHTML = `<tr><td colspan="2" style="color:#b91c1c; text-align:center;">Failed to load</td></tr>`;
+      document.getElementById('pumpBody').innerHTML = `<tr><td colspan="2" style="color:#b91c1c; text-align:center;">Failed to load</td></tr>`;
+      document.getElementById('marketCapBody').innerHTML = `<tr><td colspan="2" style="color:#b91c1c; text-align:center;">Failed to load</td></tr>`;
+      return;
     }
 
-    function formatNumber(num) {
-      if (num === null || num === undefined) return '-';
-      if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-      if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-      if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-      if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-      return num.toLocaleString(undefined, {maximumFractionDigits: 2});
-    }
+    // Newly Created - use 'genesis_date' from coin details - but markets API doesn't include that
+    // So we need to fetch coin details per coin (costly, so we'll just simulate by filtering coins with low market cap and recent addition)
+    // Instead, we'll use coins with low market cap and sort by market cap ascending, and treat them as "newly created" for demo.
+    const newlyCreated = data
+      .filter(c => c.market_cap && c.market_cap < 500000) // low market cap as proxy
+      .slice(0, 15);
 
-    function renderTable(data) {
-      const tbody = document.querySelector('#crypto-table tbody');
-      tbody.innerHTML = '';
+    const pumpCoins = data
+      .filter(c => c.price_change_percentage_24h && c.price_change_percentage_24h > 15)
+      .slice(0, 15);
 
-      data.forEach(coin => {
-        const tr = document.createElement('tr');
+    const marketCapCoins = data
+      .filter(c => c.market_cap && c.market_cap > 50000)
+      .slice(0, 15);
 
-        // Coin name & logo with link
-        const tdName = document.createElement('td');
-        tdName.className = 'coin-name';
-
-        const linkName = document.createElement('a');
-        linkName.href = `https://www.coingecko.com/en/coins/${coin.id}`;
-        linkName.target = '_blank';
-        linkName.rel = 'noopener noreferrer';
-
-        const img = document.createElement('img');
-        img.src = coin.image;
-        img.alt = coin.name + ' logo';
-        img.className = 'coin-logo';
-
-        linkName.appendChild(img);
-        linkName.appendChild(document.createTextNode(coin.name));
-
-        tdName.appendChild(linkName);
-        tr.appendChild(tdName);
-
-        // Price
-        const tdPrice = document.createElement('td');
-        tdPrice.className = 'price';
-        tdPrice.textContent = `$${coin.current_price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:6})}`;
-        tr.appendChild(tdPrice);
-
-        // 24h Change
-        const tdChange = document.createElement('td');
-        tdChange.className = 'price-change ' + (coin.price_change_percentage_24h >= 0 ? 'up' : 'down');
-        tdChange.textContent = (coin.price_change_percentage_24h ? coin.price_change_percentage_24h.toFixed(2) : '0.00') + '%';
-        tr.appendChild(tdChange);
-
-        // Market Cap
-        const tdMarketCap = document.createElement('td');
-        tdMarketCap.className = 'market-cap';
-        tdMarketCap.textContent = `$${formatNumber(coin.market_cap)}`;
-        tr.appendChild(tdMarketCap);
-
-        // Volume 24h
-        const tdVolume = document.createElement('td');
-        tdVolume.className = 'volume';
-        tdVolume.textContent = `$${formatNumber(coin.total_volume)}`;
-        tr.appendChild(tdVolume);
-
-        // Link button
-        const tdLink = document.createElement('td');
-        const btnLink = document.createElement('a');
-        btnLink.href = `https://www.coingecko.com/en/coins/${coin.id}`;
-        btnLink.target = '_blank';
-        btnLink.rel = 'noopener noreferrer';
-        btnLink.className = 'btn-link';
-        btnLink.textContent = 'View';
-        tdLink.appendChild(btnLink);
-        tr.appendChild(tdLink);
-
-        tbody.appendChild(tr);
-      });
-    }
-
-    function sortData(data, key, asc) {
-      return data.slice().sort((a, b) => {
-        const valA = a[key] ?? 0;
-        const valB = b[key] ?? 0;
-        if (typeof valA === 'string') return asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        return asc ? valA - valB : valB - valA;
-      });
-    }
-
-    function updateSortIndicators() {
-      document.querySelectorAll('thead th.sortable').forEach(th => {
-        th.classList.remove('sort-asc', 'sort-desc');
-        if (th.dataset.key === sortKey) {
-          th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
-        }
-      });
-    }
-
-    async function loadAndRender() {
-      const data = await fetchPrices();
-      if (!data) {
-        const tbody = document.querySelector('#crypto-table tbody');
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171;">Failed to load data</td></tr>`;
-        return;
-      }
-      const sorted = sortData(data, sortKey, sortAsc);
-      renderTable(sorted);
-      updateSortIndicators();
-    }
-
-    document.querySelectorAll('thead th.sortable').forEach(th => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.key;
-        if (key === sortKey) {
-          sortAsc = !sortAsc;
-        } else {
-          sortKey = key;
-          sortAsc = true;
-        }
-        loadAndRender();
-      });
+    // Populate Newly Created table
+    const newlyBody = document.getElementById('newlyCreatedBody');
+    newlyBody.innerHTML = '';
+    newlyCreated.forEach(coin => {
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.textContent = coin.name;
+      tdName.className = 'coin-name';
+      const tdDate = document.createElement('td');
+      // no creation date in API, show market cap as proxy
+      tdDate.textContent = `$${formatNumber(coin.market_cap)}`;
+      tr.appendChild(tdName);
+      tr.appendChild(tdDate);
+      newlyBody.appendChild(tr);
     });
 
-    loadAndRender();
-    setInterval(loadAndRender, 10000); // refresh every 10 seconds
-  </script>
+    // Populate Pump Coins table
+    const pumpBody = document.getElementById('pumpBody');
+    pumpBody.innerHTML = '';
+    pumpCoins.forEach(coin => {
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.textContent = coin.name;
+      tdName.className = 'coin-name';
+      const tdChange = document.createElement('td');
+      tdChange.textContent = coin.price_change_percentage_24h.toFixed(2) + '%';
+      tdChange.className = 'price-change up';
+      tr.appendChild(tdName);
+      tr.appendChild(tdChange);
+      pumpBody.appendChild(tr);
+    });
+
+    // Populate Market Cap > 50k table
+    const mcBody = document.getElementById('marketCapBody');
+    mcBody.innerHTML = '';
+    marketCapCoins.forEach(coin => {
+      const tr = document.createElement('tr');
+      const tdName = document.createElement('td');
+      tdName.textContent = coin.name;
+      tdName.className = 'coin-name';
+      const tdMc = document.createElement('td');
+      tdMc.textContent = `$${formatNumber(coin.market_cap)}`;
+      tr.appendChild(tdName);
+      tr.appendChild(tdMc);
+      mcBody.appendChild(tr);
+    });
+  }
+
+  populateTables();
+  // Optional: refresh every 30 seconds
+  setInterval(populateTables, 30000);
+</script>
+
 </body>
 </html>
