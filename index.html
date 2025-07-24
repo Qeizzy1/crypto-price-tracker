@@ -1,205 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VexApi Pulse</title>
-<style>
-  /* Reset */
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-    background-color: #0f111a;
-    color: #e1e4e8;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    line-height: 1.5;
-  }
-  header {
-    background-color: #141923;
-    padding: 1rem 2rem;
-    font-weight: 700;
-    font-size: 1.5rem;
-    letter-spacing: 0.05em;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #222831;
-  }
-  main {
-    max-width: 1100px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-  }
-  h1 {
-    margin: 0 0 1rem 0;
-    font-weight: 800;
-    font-size: 2rem;
-    color: #ffffff;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #1c202f;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 0 10px #0008;
-  }
-  thead {
-    background-color: #252a41;
-  }
-  thead th {
-    padding: 1rem 1.2rem;
-    font-weight: 700;
-    font-size: 0.85rem;
-    text-align: left;
-    color: #a0aec0;
-    border-bottom: 2px solid #393f61;
-    user-select: none;
-  }
-  tbody tr {
-    transition: background-color 0.3s ease;
-    cursor: pointer;
-  }
-  tbody tr:hover {
-    background-color: #2e3351;
-  }
-  tbody td {
-    padding: 1rem 1.2rem;
-    font-size: 0.9rem;
-    color: #cbd5e1;
-    vertical-align: middle;
-  }
-  tbody td:first-child {
-    font-weight: 600;
-    width: 40px;
-  }
-  tbody td.name-cell {
-    display: flex;
-    align-items: center;
-  }
-  tbody td.name-cell img {
-    width: 26px;
-    height: 26px;
-    margin-right: 12px;
-    border-radius: 50%;
-  }
-  tbody td.price, tbody td.marketcap, tbody td.volume {
-    font-weight: 600;
-  }
-  tbody td.change {
-    font-weight: 700;
-  }
-  tbody td.change.positive {
-    color: #22c55e; /* green */
-  }
-  tbody td.change.negative {
-    color: #ef4444; /* red */
-  }
-  tbody td.dexscreener {
-    text-align: center;
-  }
-  button.dex-btn {
-    background-color: #3b4157;
-    border: none;
-    color: #cbd5e1;
-    padding: 6px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  button.dex-btn:hover {
-    background-color: #545b77;
-  }
-
-  @media (max-width: 900px) {
-    thead th:nth-child(4), tbody td:nth-child(4),
-    thead th:nth-child(5), tbody td:nth-child(5),
-    thead th:nth-child(6), tbody td:nth-child(6) {
-      display: none;
+  <meta charset="UTF-8" />
+  <title>VexApi - Pulse Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0a0f1c;
+      color: #ffffff;
+      padding: 20px;
     }
-  }
-</style>
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      color: #ff3f3f;
+    }
+
+    .search-container {
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 250px;
+      font-size: 1rem;
+      background: #1b2233;
+      color: white;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      background-color: #1b2233;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .tab.active {
+      background-color: #2f3548;
+      color: #61dafb;
+    }
+
+    .columns {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .column {
+      flex: 1;
+      min-width: 300px;
+      background-color: #121826;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .column h2 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #2c2f42;
+      padding-bottom: 5px;
+      color: #61dafb;
+    }
+
+    .coin {
+      background-color: #1e2538;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .coin:hover {
+      background-color: #2a3148;
+    }
+
+    .coin-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .coin-name {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .coin-price {
+      font-size: 0.9rem;
+    }
+
+    .price-up { color: #00ff87; }
+    .price-down { color: #ff4e4e; }
+
+    .coin-actions a {
+      background-color: #2f3548;
+      padding: 6px 10px;
+      border-radius: 5px;
+      color: #61dafb;
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+
+    .coin-actions a:hover {
+      background-color: #3a4157;
+    }
+
+    @media (max-width: 900px) {
+      .columns { flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>VexApi Pulse</h1>
+    <p>Live Crypto Tracker - Updated Every 15s</p>
+  </header>
 
-<header>VexApi Pulse</header>
+  <div class="search-container">
+    <input type="text" id="search" placeholder="Search coins..." oninput="handleSearch()" />
+  </div>
 
-<main>
-  <h1>Crypto Pulse — Top 50 by Market Cap</h1>
-  <table aria-label="Top 50 cryptocurrency prices and stats">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Name</th>
-        <th>Price</th>
-        <th>24h Volume</th>
-        <th>Market Cap</th>
-        <th>24h Change</th>
-        <th>Dexscreener</th>
-      </tr>
-    </thead>
-    <tbody id="coinTableBody">
-      <!-- Populated dynamically -->
-    </tbody>
-  </table>
-</main>
+  <div class="tabs">
+    <div class="tab active" onclick="setTab('main')">Main</div>
+    <div class="tab" onclick="setTab('trending')">Trending</div>
+  </div>
 
-<script>
-  const tbody = document.getElementById('coinTableBody');
+  <div id="main-view" class="columns">
+    <div class="column" id="new-coins">
+      <h2>🆕 New Coins</h2>
+    </div>
+    <div class="column" id="final-stretch">
+      <h2>🚀 Final Stretch</h2>
+    </div>
+    <div class="column" id="migrated">
+      <h2>💎 Migrated</h2>
+    </div>
+  </div>
 
-  function formatNumber(num) {
-    if (num === null || num === undefined) return '-';
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-    return num.toFixed(2);
-  }
+  <div id="trending-view" class="columns" style="display:none;">
+    <div class="column" id="trending-coins">
+      <h2>🔥 Trending Coins</h2>
+    </div>
+  </div>
 
-  async function loadCoins() {
-    try {
-      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=24h');
-      const coins = await res.json();
+  <script>
+    let coinData = [];
 
-      tbody.innerHTML = '';
-
-      coins.forEach((coin, idx) => {
-        const change = coin.price_change_percentage_24h ?? 0;
-        const changeClass = change >= 0 ? 'positive' : 'negative';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${idx + 1}</td>
-          <td class="name-cell">
-            <img src="${coin.image}" alt="${coin.name} logo" />
-            <div>
-              <div>${coin.name}</div>
-              <small style="color:#94a3b8;">${coin.symbol.toUpperCase()}</small>
-            </div>
-          </td>
-          <td class="price">$${coin.current_price.toLocaleString()}</td>
-          <td class="volume">$${formatNumber(coin.total_volume)}</td>
-          <td class="marketcap">$${formatNumber(coin.market_cap)}</td>
-          <td class="change ${changeClass}">${change.toFixed(2)}%</td>
-          <td class="dexscreener">
-            <button class="dex-btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}', '_blank')">View</button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; text-align:center;">Failed to load data.</td></tr>`;
-      console.error('Error loading coins:', e);
+    async function fetchCoinlore() {
+      const res = await fetch("https://api.coinlore.net/api/tickers/?start=0&limit=100");
+      const data = await res.json();
+      return data.data.map(coin => ({
+        name: coin.name,
+        symbol: coin.symbol,
+        price: parseFloat(coin.price_usd),
+        change: parseFloat(coin.percent_change_24h),
+        link: `https://dexscreener.com/search/${coin.symbol}`
+      }));
     }
-  }
 
-  loadCoins();
-  setInterval(loadCoins, 60000); // Refresh every 60 seconds
-</script>
+    async function fetchPumpFun() {
+      try {
+        const res = await fetch("https://api.pumpfunapi.org/pumpfun/new/tokens");
+        const data = await res.json();
+        return data.map(c => ({
+          name: c.name || c.symbol,
+          symbol: c.symbol,
+          price: null,
+          change: null,
+          link: `https://dexscreener.com/search/${c.symbol}`
+        }));
+      } catch {
+        return [];
+      }
+    }
 
+    function setTab(tab) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      if (tab === "main") {
+        document.getElementById("main-view").style.display = "flex";
+        document.getElementById("trending-view").style.display = "none";
+        document.querySelector(".tab:nth-child(1)").classList.add("active");
+      } else {
+        document.getElementById("main-view").style.display = "none";
+        document.getElementById("trending-view").style.display = "flex";
+        document.querySelector(".tab:nth-child(2)").classList.add("active");
+        displayTrending();
+      }
+    }
+
+    function displayTrending() {
+      const container = document.getElementById("trending-coins");
+      container.innerHTML = `<h2>🔥 Trending Coins</h2>`;
+      const trending = coinData
+        .filter(c => c.change !== null && c.change > 0)
+        .sort((a, b) => b.change - a.change)
+        .slice(0, 15);
+      trending.forEach(c => container.appendChild(createCoinCard(c)));
+    }
+
+    function createCoinCard(c) {
+      const div = document.createElement("div");
+      div.className = "coin";
+      div.innerHTML = `
+        <div class="coin-info">
+          <div class="coin-name">${c.name} (${c.symbol})</div>
+          <div class="coin-price">
+            ${
+              c.price !== null
+                ? `$${c.price.toFixed(4)} <span class="${
+                    c.change > 0 ? "price-up" : c.change < 0 ? "price-down" : ""
+                  }">${c.change > 0 ? "🔼" : "🔻"}${c.change.toFixed(2)}%</span>`
+                : "No data"
+            }
+          </div>
+        </div>
+        <div class="coin-actions">
+          <a href="${c.link}" target="_blank">View</a>
+        </div>
+      `;
+      return div;
+    }
+
+    function displayCoins() {
+      document.getElementById("new-coins").innerHTML = "<h2>🆕 New Coins</h2>";
+      document.getElementById("final-stretch").innerHTML = "<h2>🚀 Final Stretch</h2>";
+      document.getElementById("migrated").innerHTML = "<h2>💎 Migrated</h2>";
+
+      const newCoins = coinData.filter(c => c.price === null).slice(0, 15);
+      const final = coinData.filter(c => c.change !== null && c.change > 5).slice(0, 15);
+      const migrated = coinData.filter(c => c.price && c.price * 1000000 > 50000).slice(0, 15);
+
+      newCoins.forEach(c => document.getElementById("new-coins").appendChild(createCoinCard(c)));
+      final.forEach(c => document.getElementById("final-stretch").appendChild(createCoinCard(c)));
+      migrated.forEach(c => document.getElementById("migrated").appendChild(createCoinCard(c)));
+    }
+
+    function handleSearch() {
+      const term = document.getElementById("search").value.toLowerCase();
+      if (term === "") {
+        displayCoins();
+        return;
+      }
+      const filtered = coinData.filter(c =>
+        `${c.name} ${c.symbol}`.toLowerCase().includes(term)
+      );
+
+      document.getElementById("new-coins").innerHTML = "<h2>🔍 Search Results</h2>";
+      document.getElementById("final-stretch").innerHTML = "";
+      document.getElementById("migrated").innerHTML = "";
+      filtered.forEach(c =>
+        document.getElementById("new-coins").appendChild(createCoinCard(c))
+      );
+    }
+
+    async function update() {
+      const pump = await fetchPumpFun();
+      const lore = await fetchCoinlore();
+      coinData = [...pump, ...lore];
+      displayCoins();
+    }
+
+    update();
+    setInterval(update, 15000);
+  </script>
 </body>
 </html>
