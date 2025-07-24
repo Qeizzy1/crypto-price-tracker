@@ -1,162 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VexApi</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #0d1b2a;
-      color: #fff;
-    }
-    header {
-      background-color: #1b263b;
-      padding: 20px;
-      text-align: center;
-      font-size: 2rem;
-      font-weight: bold;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
-    .card {
-      background-color: #1e293b;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .btn {
-      background-color: #475569;
-      color: #fff;
-      padding: 8px 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    input {
-      background-color: #1e293b;
-      border: 1px solid #475569;
-      color: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      width: 100%;
-    }
-    label {
-      margin-top: 10px;
-      display: block;
-      font-size: 14px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VexApi</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0d1b2a;
+    color: #fff;
+  }
+  header {
+    background-color: #1b263b;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+  }
+  button.toggle-btn {
+    background-color: #475569;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.25s ease;
+  }
+  button.toggle-btn:hover {
+    background-color: #64748b;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+  /* Coin List Styles */
+  #coin-list .card {
+    background-color: #1e293b;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #coin-list .card:hover {
+    background-color: #334155;
+  }
+  /* Buttons */
+  .btn {
+    background-color: #475569;
+    color: #fff;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  .btn:hover {
+    background-color: #64748b;
+  }
+  /* Inputs */
+  input {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  label {
+    margin-top: 10px;
+    display: block;
+    font-size: 14px;
+  }
+  /* Sections */
+  section {
+    display: none;
+  }
+  section.active {
+    display: block;
+  }
+  /* Status */
+  #status {
+    margin-top: 15px;
+    min-height: 20px;
+    color: lightgreen;
+    font-weight: 600;
+  }
+</style>
 </head>
 <body>
 
-<header>VexApi</header>
-
-<div class="container" id="coin-list">
-  <h2>Top Coins</h2>
-</div>
+<header>
+  <h1>VexApi</h1>
+  <button id="toggleView" class="toggle-btn">Create Token</button>
+</header>
 
 <div class="container">
-  <h2>Create Your Own Token (Free on Devnet)</h2>
-  <label>Name:
-    <input id="tokenName" type="text" placeholder="MyToken" />
-  </label>
-  <label>Symbol:
-    <input id="tokenSymbol" type="text" placeholder="MTK" />
-  </label>
-  <label>Supply:
-    <input id="tokenSupply" type="number" placeholder="1000000" />
-  </label>
-  <button class="btn" onclick="createToken()">Create Token</button>
-  <p id="status" style="margin-top:10px; color:lightgreen;"></p>
+  <section id="liveSection" class="active">
+    <h2>Top Coins</h2>
+    <div id="coin-list"></div>
+  </section>
+
+  <section id="createSection">
+    <h2>Create Your Own Token (Devnet)</h2>
+    <label>Name:
+      <input id="tokenName" type="text" placeholder="MyToken" />
+    </label>
+    <label>Symbol:
+      <input id="tokenSymbol" type="text" placeholder="MTK" maxlength="5" />
+    </label>
+    <label>Supply:
+      <input id="tokenSupply" type="number" placeholder="1000000" min="1" />
+    </label>
+    <button class="btn" id="createTokenBtn">Create Token</button>
+    <p id="status"></p>
+  </section>
 </div>
 
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 <script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.js"></script>
 <script>
-  // Fetch top coins from CoinGecko
+  const toggleBtn = document.getElementById('toggleView');
+  const liveSection = document.getElementById('liveSection');
+  const createSection = document.getElementById('createSection');
+  const coinList = document.getElementById('coin-list');
+  const status = document.getElementById('status');
+  const createTokenBtn = document.getElementById('createTokenBtn');
+
+  // Toggle between Live and Create sections
+  toggleBtn.addEventListener('click', () => {
+    if (liveSection.classList.contains('active')) {
+      liveSection.classList.remove('active');
+      createSection.classList.add('active');
+      toggleBtn.textContent = "Live Prices";
+      status.textContent = '';
+    } else {
+      createSection.classList.remove('active');
+      liveSection.classList.add('active');
+      toggleBtn.textContent = "Create Token";
+      status.textContent = '';
+    }
+  });
+
+  // Fetch coin data from CoinGecko
   async function fetchCoins() {
-    const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1');
-    const coins = await res.json();
-    const list = document.getElementById("coin-list");
-    coins.forEach(coin => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div>
-          <strong>${coin.name}</strong> (${coin.symbol.toUpperCase()})<br>
-          $${coin.current_price.toLocaleString()}
-        </div>
-        <button class="btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}','_blank')">Dexscreener</button>
-      `;
-      list.appendChild(card);
-    });
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1');
+      const coins = await res.json();
+      coinList.innerHTML = '';
+      coins.forEach(coin => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div>
+            <strong>${coin.name}</strong> (${coin.symbol.toUpperCase()})<br>
+            $${coin.current_price.toLocaleString()}
+          </div>
+          <button class="btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}', '_blank')">Dexscreener</button>
+        `;
+        coinList.appendChild(card);
+      });
+    } catch (e) {
+      coinList.innerHTML = '<p style="color:#f87171;">Failed to load coins.</p>';
+      console.error(e);
+    }
   }
   fetchCoins();
 
-  // Token creation
-  async function createToken() {
-    const status = document.getElementById('status');
-    status.innerText = "Connecting to Phantom...";
+  // Create token function using Phantom wallet and Solana Devnet
+  createTokenBtn.addEventListener('click', async () => {
+    status.style.color = 'lightgreen';
+    status.textContent = 'Connecting to Phantom Wallet...';
 
     if (!window.solana || !window.solana.isPhantom) {
-      alert("Please install Phantom wallet");
+      alert("Phantom wallet is not installed. Please install it to create tokens.");
+      status.style.color = 'red';
+      status.textContent = 'Phantom wallet is required.';
       return;
     }
 
-    await window.solana.connect();
-    const connection = new solanaWeb3.Connection("https://api.devnet.solana.com", "confirmed");
-    const fromPubkey = window.solana.publicKey;
-    const payer = fromPubkey;
+    try {
+      await window.solana.connect();
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
+      const fromPubkey = window.solana.publicKey;
 
-    const tokenName = document.getElementById("tokenName").value.trim();
-    const tokenSymbol = document.getElementById("tokenSymbol").value.trim();
-    const supply = parseInt(document.getElementById("tokenSupply").value);
+      // Get inputs
+      const tokenName = document.getElementById('tokenName').value.trim();
+      const tokenSymbol = document.getElementById('tokenSymbol').value.trim();
+      const supply = parseInt(document.getElementById('tokenSupply').value);
 
-    if (!tokenName || !tokenSymbol || isNaN(supply)) {
-      status.innerText = "Please fill all fields.";
-      return;
+      if (!tokenName || !tokenSymbol || !supply || supply <= 0) {
+        status.style.color = 'red';
+        status.textContent = 'Please fill all fields with valid values.';
+        return;
+      }
+
+      status.textContent = 'Creating token mint account...';
+
+      // Create new mint account
+      const mint = solanaWeb3.Keypair.generate();
+      const lamports = await connection.getMinimumBalanceForRentExemption(solanaWeb3.MintLayout.span);
+
+      // Create transaction to create mint
+      const transaction = new solanaWeb3.Transaction();
+
+      transaction.add(
+        solanaWeb3.SystemProgram.createAccount({
+          fromPubkey,
+          newAccountPubkey: mint.publicKey,
+          space: solanaWeb3.MintLayout.span,
+          lamports,
+          programId: solanaWeb3.TOKEN_PROGRAM_ID,
+        }),
+        solanaWeb3.Token.createInitMintInstruction(
+          solanaWeb3.TOKEN_PROGRAM_ID,
+          mint.publicKey,
+          9, // decimals
+          fromPubkey, // mint authority
+          null // freeze authority
+        )
+      );
+
+      transaction.feePayer = fromPubkey;
+      let { blockhash } = await connection.getRecentBlockhash();
+      transaction.recentBlockhash = blockhash;
+
+      transaction.partialSign(mint);
+
+      // Phantom wallet signs transaction
+      const signedTransaction = await window.solana.signTransaction(transaction);
+
+      // Send and confirm transaction
+      const txid = await connection.sendRawTransaction(signedTransaction.serialize());
+      await connection.confirmTransaction(txid, 'confirmed');
+
+      status.textContent = `Mint created! Mint Address: ${mint.publicKey.toBase58()}`;
+
+      // Mint initial supply to user
+      status.textContent += '\nMinting initial supply to your wallet...';
+
+      // Now mint tokens to user
+      const token = new solanaWeb3.Token(connection, mint.publicKey, solanaWeb3.TOKEN_PROGRAM_ID, window.solana);
+
+      // Get or create associated token account for user
+      const userTokenAccount = await token.getOrCreateAssociatedAccountInfo(fromPubkey);
+
+      // Mint the tokens (multiply by 10^decimals)
+      await token.mintTo(
+        userTokenAccount.address,
+        fromPubkey,
+        [],
+        supply * Math.pow(10, 9)
+      );
+
+      status.textContent += `\n${supply} tokens minted to your wallet!`;
+
+    } catch (error) {
+      console.error(error);
+      status.style.color = 'red';
+      status.textContent = 'Failed to create token: ' + (error.message || error);
     }
-
-    const mint = solanaWeb3.Keypair.generate();
-    const lamports = await solanaWeb3.Token.getMinBalanceRentForExemptMint(connection);
-    const transaction = new solanaWeb3.Transaction();
-
-    transaction.add(
-      solanaWeb3.SystemProgram.createAccount({
-        fromPubkey,
-        newAccountPubkey: mint.publicKey,
-        space: solanaWeb3.MINT_SIZE,
-        lamports,
-        programId: solanaWeb3.TOKEN_PROGRAM_ID,
-      }),
-      solanaWeb3.Token.createInitMintInstruction(
-        solanaWeb3.TOKEN_PROGRAM_ID,
-        mint.publicKey,
-        9,
-        fromPubkey,
-        null
-      )
-    );
-
-    const recentBlockhash = await connection.getRecentBlockhash();
-    transaction.recentBlockhash = recentBlockhash.blockhash;
-    transaction.feePayer = fromPubkey;
-
-    transaction.partialSign(mint);
-    const signedTx = await window.solana.signTransaction(transaction);
-    const txid = await connection.sendRawTransaction(signedTx.serialize());
-    await connection.confirmTransaction(txid);
-
-    status.innerText = `Token Created! Mint Address: ${mint.publicKey.toBase58()}`;
-  }
+  });
 </script>
 
 </body>
