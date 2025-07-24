@@ -3,109 +3,135 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VexApi - Live Crypto Board</title>
+<title>VexApi Pulse</title>
 <style>
-  /* Reset & base */
-  body, html {
-    margin: 0; padding: 0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #0d1b2a;
-    color: #fff;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+  /* Reset */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background-color: #0f111a;
+    color: #e1e4e8;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.5;
   }
   header {
-    background: #1b263b;
-    padding: 15px 30px;
-    font-size: 1.5rem;
+    background-color: #141923;
+    padding: 1rem 2rem;
     font-weight: 700;
-    letter-spacing: 1px;
-    color: #cbd5e1;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #222831;
   }
   main {
-    flex: 1;
-    padding: 20px 30px;
-    overflow-x: auto;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1rem;
   }
-
+  h1 {
+    margin: 0 0 1rem 0;
+    font-weight: 800;
+    font-size: 2rem;
+    color: #ffffff;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
-    background-color: #14253d;
+    background-color: #1c202f;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 0 10px #0008;
   }
   thead {
-    background-color: #1e2a4a;
+    background-color: #252a41;
   }
   thead th {
-    padding: 12px 15px;
-    text-align: left;
+    padding: 1rem 1.2rem;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    text-align: left;
     color: #a0aec0;
-    border-bottom: 2px solid #3a4a72;
+    border-bottom: 2px solid #393f61;
+    user-select: none;
   }
   tbody tr {
     transition: background-color 0.3s ease;
     cursor: pointer;
   }
   tbody tr:hover {
-    background-color: #2b3a6f;
+    background-color: #2e3351;
   }
   tbody td {
-    padding: 12px 15px;
+    padding: 1rem 1.2rem;
     font-size: 0.9rem;
-    color: #e2e8f0;
+    color: #cbd5e1;
     vertical-align: middle;
   }
-  tbody td.price {
-    font-weight: 700;
+  tbody td:first-child {
+    font-weight: 600;
+    width: 40px;
+  }
+  tbody td.name-cell {
+    display: flex;
+    align-items: center;
+  }
+  tbody td.name-cell img {
+    width: 26px;
+    height: 26px;
+    margin-right: 12px;
+    border-radius: 50%;
+  }
+  tbody td.price, tbody td.marketcap, tbody td.volume {
+    font-weight: 600;
   }
   tbody td.change {
     font-weight: 700;
   }
   tbody td.change.positive {
-    color: #4ade80; /* green */
+    color: #22c55e; /* green */
   }
   tbody td.change.negative {
-    color: #f87171; /* red */
+    color: #ef4444; /* red */
   }
-  tbody td.link-btn {
+  tbody td.dexscreener {
     text-align: center;
   }
   button.dex-btn {
-    background-color: #475569;
+    background-color: #3b4157;
     border: none;
     color: #cbd5e1;
-    padding: 6px 14px;
-    border-radius: 5px;
+    padding: 6px 16px;
+    border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.25s ease;
+    transition: background-color 0.3s ease;
   }
   button.dex-btn:hover {
-    background-color: #64748b;
+    background-color: #545b77;
   }
 
-  /* Responsive */
-  @media (max-width: 700px) {
+  @media (max-width: 900px) {
     thead th:nth-child(4), tbody td:nth-child(4),
-    thead th:nth-child(5), tbody td:nth-child(5) {
-      display: none; /* hide volume and market cap on small screens */
+    thead th:nth-child(5), tbody td:nth-child(5),
+    thead th:nth-child(6), tbody td:nth-child(6) {
+      display: none;
     }
   }
 </style>
 </head>
 <body>
 
-<header>VexApi - Live Crypto Board</header>
+<header>VexApi Pulse</header>
 
 <main>
-  <table id="coinsTable" aria-label="Cryptocurrency prices">
+  <h1>Crypto Pulse — Top 50 by Market Cap</h1>
+  <table aria-label="Top 50 cryptocurrency prices and stats">
     <thead>
       <tr>
         <th>#</th>
@@ -113,20 +139,19 @@
         <th>Price</th>
         <th>24h Volume</th>
         <th>Market Cap</th>
-        <th>Change 24h</th>
+        <th>24h Change</th>
         <th>Dexscreener</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- coins will be inserted here -->
+    <tbody id="coinTableBody">
+      <!-- Populated dynamically -->
     </tbody>
   </table>
 </main>
 
 <script>
-  const tbody = document.querySelector('#coinsTable tbody');
+  const tbody = document.getElementById('coinTableBody');
 
-  // Format numbers nicely with suffixes (K, M, B)
   function formatNumber(num) {
     if (num === null || num === undefined) return '-';
     if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
@@ -135,46 +160,45 @@
     return num.toFixed(2);
   }
 
-  async function fetchCoins() {
+  async function loadCoins() {
     try {
-      const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=24h');
-      const coins = await response.json();
+      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=24h');
+      const coins = await res.json();
 
       tbody.innerHTML = '';
 
-      coins.forEach((coin, i) => {
-        const tr = document.createElement('tr');
+      coins.forEach((coin, idx) => {
+        const change = coin.price_change_percentage_24h ?? 0;
+        const changeClass = change >= 0 ? 'positive' : 'negative';
 
-        const change24h = coin.price_change_percentage_24h ?? 0;
-        const changeClass = change24h >= 0 ? 'positive' : 'negative';
-
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td>
-            <img src="${coin.image}" alt="${coin.name} logo" width="20" height="20" style="vertical-align:middle; margin-right:8px; border-radius:50%;">
-            ${coin.name} <small style="color:#94a3b8;">(${coin.symbol.toUpperCase()})</small>
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${idx + 1}</td>
+          <td class="name-cell">
+            <img src="${coin.image}" alt="${coin.name} logo" />
+            <div>
+              <div>${coin.name}</div>
+              <small style="color:#94a3b8;">${coin.symbol.toUpperCase()}</small>
+            </div>
           </td>
           <td class="price">$${coin.current_price.toLocaleString()}</td>
-          <td>$${formatNumber(coin.total_volume)}</td>
-          <td>$${formatNumber(coin.market_cap)}</td>
-          <td class="change ${changeClass}">${change24h.toFixed(2)}%</td>
-          <td class="link-btn">
+          <td class="volume">$${formatNumber(coin.total_volume)}</td>
+          <td class="marketcap">$${formatNumber(coin.market_cap)}</td>
+          <td class="change ${changeClass}">${change.toFixed(2)}%</td>
+          <td class="dexscreener">
             <button class="dex-btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}', '_blank')">View</button>
           </td>
         `;
-
-        tbody.appendChild(tr);
+        tbody.appendChild(row);
       });
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="7" style="color:#f87171; text-align:center;">Failed to load data.</td></tr>`;
-      console.error('Error fetching coins:', e);
+      tbody.innerHTML = `<tr><td colspan="7" style="color:#ef4444; text-align:center;">Failed to load data.</td></tr>`;
+      console.error('Error loading coins:', e);
     }
   }
 
-  fetchCoins();
-
-  // Refresh every 60 seconds for near-live updates
-  setInterval(fetchCoins, 60000);
+  loadCoins();
+  setInterval(loadCoins, 60000); // Refresh every 60 seconds
 </script>
 
 </body>
