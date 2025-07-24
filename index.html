@@ -92,7 +92,7 @@
   /* Status */
   #status {
     margin-top: 15px;
-    min-height: 20px;
+    min-height: 40px;
     color: lightgreen;
     font-weight: 600;
     white-space: pre-line;
@@ -178,7 +178,7 @@
   }
   fetchCoins();
 
-  // Token creation
+  // Token creation handler
   createTokenBtn.addEventListener('click', async () => {
     status.style.color = 'lightgreen';
     status.textContent = 'Connecting to Phantom Wallet...';
@@ -194,6 +194,7 @@
       await window.solana.connect();
       const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
       const fromPubkey = window.solana.publicKey;
+      const splToken = window.SplToken;
 
       const tokenName = document.getElementById('tokenName').value.trim();
       const tokenSymbol = document.getElementById('tokenSymbol').value.trim();
@@ -207,7 +208,7 @@
 
       status.textContent = 'Creating token mint account...';
 
-      const MINT_SIZE = 82; // Correct mint account size
+      const MINT_SIZE = 82; // Mint account size for SPL Token
       const lamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
 
       const mint = solanaWeb3.Keypair.generate();
@@ -222,12 +223,12 @@
           lamports,
           programId: solanaWeb3.TOKEN_PROGRAM_ID,
         }),
-        solanaWeb3.Token.createInitMintInstruction(
-          solanaWeb3.TOKEN_PROGRAM_ID,
+        splToken.Token.createInitMintInstruction(
+          splToken.TOKEN_PROGRAM_ID,
           mint.publicKey,
           9, // decimals
-          fromPubkey, // mint authority
-          null // freeze authority
+          fromPubkey,
+          null
         )
       );
 
@@ -239,14 +240,20 @@
 
       const signedTransaction = await window.solana.signTransaction(transaction);
 
+      status.textContent = 'Sending transaction to create mint...';
       const txid = await connection.sendRawTransaction(signedTransaction.serialize());
+
+      status.textContent = `Transaction sent! Waiting for confirmation...\nTxid: ${txid}`;
       await connection.confirmTransaction(txid, 'confirmed');
 
-      status.textContent = `Mint created!\nMint Address: ${mint.publicKey.toBase58()}`;
+      status.textContent = `Mint created!\nMint Address: ${mint.publicKey.toBase58()}\n\nMinting tokens to your wallet...`;
 
-      status.textContent += `\nMinting ${supply} tokens to your wallet...`;
-
-      const token = new solanaWeb3.Token(connection, mint.publicKey, solanaWeb3.TOKEN_PROGRAM_ID, window.solana);
+      const token = new splToken.Token(
+        connection,
+        mint.publicKey,
+        splToken.TOKEN_PROGRAM_ID,
+        window.solana
+      );
 
       const userTokenAccount = await token.getOrCreateAssociatedAccountInfo(fromPubkey);
 
@@ -257,12 +264,22 @@
         supply * Math.pow(10, 9)
       );
 
-      status.textContent += `\n${supply} tokens minted to your wallet!`;
+      status.textContent += `\nSuccessfully minted ${supply} tokens to your wallet!`;
 
     } catch (error) {
       console.error(error);
       status.style.color = 'red';
-      status.textContent = 'Failed to create token: ' + (error.message || error);
+
+      // Common error checks
+      if (error.message.includes('User rejected the request')) {
+        status.textContent = 'Transaction cancelled by user.';
+      } else if (error.message.includes('Failed to sign transaction')) {
+        status.textContent = 'Failed to sign transaction. Please try again.';
+      } else if (error.message.includes('Blockhash not found')) {
+        status.textContent = 'Network busy or blockhash expired. Please try again.';
+      } else {
+        status.textContent = 'Failed to create token: ' + (error.message || error);
+      }
     }
   });
 </script>
