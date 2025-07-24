@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dexscreener-Style Crypto Tracker</title>
+  <title>moonLive - Crypto Tracker</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
@@ -122,6 +122,16 @@
       font-feature-settings: 'tnum';
     }
 
+    a {
+      color: #14f195;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: #0bbd7e;
+      text-decoration: underline;
+    }
+
     /* Responsive */
     @media (max-width: 720px) {
       body {
@@ -139,7 +149,7 @@
   </style>
 </head>
 <body>
-  <h1>Dexscreener-Style Crypto Tracker</h1>
+  <h1>moonLive</h1>
   <table id="crypto-table" aria-label="Cryptocurrency Prices">
     <thead>
       <tr>
@@ -164,7 +174,7 @@
       "pancakeswap-token", "neo", "dash", "zilliqa", "maker", "celsius-degree-token",
       "elrond-erd-2", "huobi-token", "hedera-hashgraph", "okb", "fantom", "decentraland",
       "chiliz", "kusama", "helium", "the-graph", "osmosis", "flow", "render-token",
-      "basic-attention-token", "bitTorrent", "decred", "enjincoin"
+      "basic-attention-token", "bittorrent", "decred", "enjincoin"
     ];
 
     let sortKey = 'market_cap';
@@ -199,15 +209,24 @@
       data.forEach(coin => {
         const tr = document.createElement('tr');
 
-        // Coin name & logo
+        // Coin name & logo with link
         const tdName = document.createElement('td');
         tdName.className = 'coin-name';
+
+        const link = document.createElement('a');
+        link.href = `https://www.coingecko.com/en/coins/${coin.id}`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+
         const img = document.createElement('img');
         img.src = coin.image;
         img.alt = coin.name + ' logo';
         img.className = 'coin-logo';
-        tdName.appendChild(img);
-        tdName.appendChild(document.createTextNode(coin.name));
+
+        link.appendChild(img);
+        link.appendChild(document.createTextNode(coin.name));
+
+        tdName.appendChild(link);
         tr.appendChild(tdName);
 
         // Price
@@ -282,7 +301,7 @@
     });
 
     loadAndRender();
-    setInterval(loadAndRender, 60000); // refresh every 60 seconds
+    setInterval(loadAndRender, 10000); // refresh every 10 seconds
   </script>
 </body>
 </html>
