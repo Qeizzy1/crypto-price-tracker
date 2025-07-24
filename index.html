@@ -132,6 +132,27 @@
       text-decoration: underline;
     }
 
+    .btn-link {
+      background-color: #14f195;
+      border: none;
+      color: #0b0f17;
+      padding: 6px 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      text-align: center;
+      user-select: none;
+    }
+    .btn-link:hover {
+      background-color: #0bbd7e;
+      color: white;
+      text-decoration: none;
+    }
+
     /* Responsive */
     @media (max-width: 720px) {
       body {
@@ -144,6 +165,11 @@
 
       .price-change {
         width: 70px;
+      }
+
+      .btn-link {
+        padding: 4px 8px;
+        font-size: 12px;
       }
     }
   </style>
@@ -158,10 +184,11 @@
         <th data-key="price_change_percentage_24h" class="sortable">24h Change</th>
         <th data-key="market_cap" class="sortable">Market Cap</th>
         <th data-key="total_volume" class="sortable">Volume (24h)</th>
+        <th>Link</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading data…</td></tr>
+      <tr><td colspan="6" style="text-align:center; padding: 20px;">Loading data…</td></tr>
     </tbody>
   </table>
 
@@ -213,20 +240,20 @@
         const tdName = document.createElement('td');
         tdName.className = 'coin-name';
 
-        const link = document.createElement('a');
-        link.href = `https://www.coingecko.com/en/coins/${coin.id}`;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        const linkName = document.createElement('a');
+        linkName.href = `https://www.coingecko.com/en/coins/${coin.id}`;
+        linkName.target = '_blank';
+        linkName.rel = 'noopener noreferrer';
 
         const img = document.createElement('img');
         img.src = coin.image;
         img.alt = coin.name + ' logo';
         img.className = 'coin-logo';
 
-        link.appendChild(img);
-        link.appendChild(document.createTextNode(coin.name));
+        linkName.appendChild(img);
+        linkName.appendChild(document.createTextNode(coin.name));
 
-        tdName.appendChild(link);
+        tdName.appendChild(linkName);
         tr.appendChild(tdName);
 
         // Price
@@ -252,6 +279,17 @@
         tdVolume.className = 'volume';
         tdVolume.textContent = `$${formatNumber(coin.total_volume)}`;
         tr.appendChild(tdVolume);
+
+        // Link button
+        const tdLink = document.createElement('td');
+        const btnLink = document.createElement('a');
+        btnLink.href = `https://www.coingecko.com/en/coins/${coin.id}`;
+        btnLink.target = '_blank';
+        btnLink.rel = 'noopener noreferrer';
+        btnLink.className = 'btn-link';
+        btnLink.textContent = 'View';
+        tdLink.appendChild(btnLink);
+        tr.appendChild(tdLink);
 
         tbody.appendChild(tr);
       });
@@ -279,7 +317,7 @@
       const data = await fetchPrices();
       if (!data) {
         const tbody = document.querySelector('#crypto-table tbody');
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #f87171;">Failed to load data</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #f87171;">Failed to load data</td></tr>`;
         return;
       }
       const sorted = sortData(data, sortKey, sortAsc);
