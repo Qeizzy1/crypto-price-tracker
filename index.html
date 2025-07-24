@@ -3,284 +3,178 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VexApi</title>
+<title>VexApi - Live Crypto Board</title>
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
+  /* Reset & base */
+  body, html {
+    margin: 0; padding: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: #0d1b2a;
     color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
   header {
-    background-color: #1b263b;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: #1b263b;
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #cbd5e1;
+    user-select: none;
   }
-  header h1 {
-    margin: 0;
-    font-size: 1.8rem;
+  main {
+    flex: 1;
+    padding: 20px 30px;
+    overflow-x: auto;
   }
-  button.toggle-btn {
-    background-color: #475569;
-    color: #fff;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 6px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #14253d;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 10px #0008;
+  }
+  thead {
+    background-color: #1e2a4a;
+  }
+  thead th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #a0aec0;
+    border-bottom: 2px solid #3a4a72;
+  }
+  tbody tr {
+    transition: background-color 0.3s ease;
     cursor: pointer;
+  }
+  tbody tr:hover {
+    background-color: #2b3a6f;
+  }
+  tbody td {
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+    vertical-align: middle;
+  }
+  tbody td.price {
+    font-weight: 700;
+  }
+  tbody td.change {
+    font-weight: 700;
+  }
+  tbody td.change.positive {
+    color: #4ade80; /* green */
+  }
+  tbody td.change.negative {
+    color: #f87171; /* red */
+  }
+  tbody td.link-btn {
+    text-align: center;
+  }
+  button.dex-btn {
+    background-color: #475569;
+    border: none;
+    color: #cbd5e1;
+    padding: 6px 14px;
+    border-radius: 5px;
     font-weight: 600;
+    cursor: pointer;
     transition: background-color 0.25s ease;
   }
-  button.toggle-btn:hover {
+  button.dex-btn:hover {
     background-color: #64748b;
   }
-  .container {
-    max-width: 1000px;
-    margin: 30px auto;
-    padding: 0 20px;
-  }
-  /* Coin List Styles */
-  #coin-list .card {
-    background-color: #1e293b;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  #coin-list .card:hover {
-    background-color: #334155;
-  }
-  /* Buttons */
-  .btn {
-    background-color: #475569;
-    color: #fff;
-    padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s ease;
-  }
-  .btn:hover {
-    background-color: #64748b;
-  }
-  /* Inputs */
-  input {
-    background-color: #1e293b;
-    border: 1px solid #475569;
-    color: #fff;
-    padding: 10px;
-    border-radius: 6px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  label {
-    margin-top: 10px;
-    display: block;
-    font-size: 14px;
-  }
-  /* Sections */
-  section {
-    display: none;
-  }
-  section.active {
-    display: block;
-  }
-  /* Status */
-  #status {
-    margin-top: 15px;
-    min-height: 40px;
-    color: lightgreen;
-    font-weight: 600;
-    white-space: pre-line;
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    thead th:nth-child(4), tbody td:nth-child(4),
+    thead th:nth-child(5), tbody td:nth-child(5) {
+      display: none; /* hide volume and market cap on small screens */
+    }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>VexApi</h1>
-  <button id="toggleView" class="toggle-btn">Create Token</button>
-</header>
+<header>VexApi - Live Crypto Board</header>
 
-<div class="container">
-  <section id="liveSection" class="active">
-    <h2>Top Coins</h2>
-    <div id="coin-list"></div>
-  </section>
-
-  <section id="createSection">
-    <h2>Create Your Own Token (Devnet)</h2>
-    <label>Name:
-      <input id="tokenName" type="text" placeholder="MyToken" />
-    </label>
-    <label>Symbol:
-      <input id="tokenSymbol" type="text" placeholder="MTK" maxlength="5" />
-    </label>
-    <label>Supply:
-      <input id="tokenSupply" type="number" placeholder="1000000" min="1" />
-    </label>
-    <button class="btn" id="createTokenBtn">Create Token</button>
-    <p id="status"></p>
-  </section>
-</div>
-
-<!-- Load Solana web3 -->
-<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-<!-- Load older stable version of SPL Token -->
-<script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.2.0/lib/index.iife.min.js"></script>
+<main>
+  <table id="coinsTable" aria-label="Cryptocurrency prices">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>24h Volume</th>
+        <th>Market Cap</th>
+        <th>Change 24h</th>
+        <th>Dexscreener</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- coins will be inserted here -->
+    </tbody>
+  </table>
+</main>
 
 <script>
-  const toggleBtn = document.getElementById('toggleView');
-  const liveSection = document.getElementById('liveSection');
-  const createSection = document.getElementById('createSection');
-  const coinList = document.getElementById('coin-list');
-  const status = document.getElementById('status');
-  const createTokenBtn = document.getElementById('createTokenBtn');
+  const tbody = document.querySelector('#coinsTable tbody');
 
-  toggleBtn.addEventListener('click', () => {
-    if (liveSection.classList.contains('active')) {
-      liveSection.classList.remove('active');
-      createSection.classList.add('active');
-      toggleBtn.textContent = "Live Prices";
-      status.textContent = '';
-    } else {
-      createSection.classList.remove('active');
-      liveSection.classList.add('active');
-      toggleBtn.textContent = "Create Token";
-      status.textContent = '';
-    }
-  });
+  // Format numbers nicely with suffixes (K, M, B)
+  function formatNumber(num) {
+    if (num === null || num === undefined) return '-';
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+    return num.toFixed(2);
+  }
 
   async function fetchCoins() {
     try {
-      const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1');
-      const coins = await res.json();
-      coinList.innerHTML = '';
-      coins.forEach(coin => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div>
-            <strong>${coin.name}</strong> (${coin.symbol.toUpperCase()})<br>
-            $${coin.current_price.toLocaleString()}
-          </div>
-          <button class="btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}', '_blank')">Dexscreener</button>
+      const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&price_change_percentage=24h');
+      const coins = await response.json();
+
+      tbody.innerHTML = '';
+
+      coins.forEach((coin, i) => {
+        const tr = document.createElement('tr');
+
+        const change24h = coin.price_change_percentage_24h ?? 0;
+        const changeClass = change24h >= 0 ? 'positive' : 'negative';
+
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td>
+            <img src="${coin.image}" alt="${coin.name} logo" width="20" height="20" style="vertical-align:middle; margin-right:8px; border-radius:50%;">
+            ${coin.name} <small style="color:#94a3b8;">(${coin.symbol.toUpperCase()})</small>
+          </td>
+          <td class="price">$${coin.current_price.toLocaleString()}</td>
+          <td>$${formatNumber(coin.total_volume)}</td>
+          <td>$${formatNumber(coin.market_cap)}</td>
+          <td class="change ${changeClass}">${change24h.toFixed(2)}%</td>
+          <td class="link-btn">
+            <button class="dex-btn" onclick="window.open('https://dexscreener.com/search/${coin.symbol}', '_blank')">View</button>
+          </td>
         `;
-        coinList.appendChild(card);
+
+        tbody.appendChild(tr);
       });
     } catch (e) {
-      coinList.innerHTML = '<p style="color:#f87171;">Failed to load coins.</p>';
-      console.error(e);
+      tbody.innerHTML = `<tr><td colspan="7" style="color:#f87171; text-align:center;">Failed to load data.</td></tr>`;
+      console.error('Error fetching coins:', e);
     }
   }
+
   fetchCoins();
 
-  createTokenBtn.addEventListener('click', async () => {
-    status.style.color = 'lightgreen';
-    status.textContent = 'Connecting to Phantom Wallet...';
-
-    if (!window.solana || !window.solana.isPhantom) {
-      alert("Phantom wallet is not installed. Please install it to create tokens.");
-      status.style.color = 'red';
-      status.textContent = 'Phantom wallet is required.';
-      return;
-    }
-
-    try {
-      await window.solana.connect();
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
-      const fromPubkey = window.solana.publicKey;
-      const splToken = window.SplToken;
-
-      const tokenName = document.getElementById('tokenName').value.trim();
-      const tokenSymbol = document.getElementById('tokenSymbol').value.trim();
-      const supply = parseInt(document.getElementById('tokenSupply').value);
-
-      if (!tokenName || !tokenSymbol || !supply || supply <= 0) {
-        status.style.color = 'red';
-        status.textContent = 'Please fill all fields with valid values.';
-        return;
-      }
-
-      status.textContent = 'Creating token mint account...';
-
-      const MINT_SIZE = 82; // Mint account size for SPL Token
-      const lamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
-
-      const mint = solanaWeb3.Keypair.generate();
-
-      const transaction = new solanaWeb3.Transaction();
-
-      transaction.add(
-        solanaWeb3.SystemProgram.createAccount({
-          fromPubkey,
-          newAccountPubkey: mint.publicKey,
-          space: MINT_SIZE,
-          lamports,
-          programId: solanaWeb3.TOKEN_PROGRAM_ID,
-        }),
-        splToken.Token.createInitMintInstruction(
-          splToken.TOKEN_PROGRAM_ID,
-          mint.publicKey,
-          9, // decimals
-          fromPubkey,
-          null
-        )
-      );
-
-      transaction.feePayer = fromPubkey;
-      let { blockhash } = await connection.getRecentBlockhash();
-      transaction.recentBlockhash = blockhash;
-
-      transaction.partialSign(mint);
-
-      const signedTransaction = await window.solana.signTransaction(transaction);
-
-      status.textContent = 'Sending transaction to create mint...';
-      const txid = await connection.sendRawTransaction(signedTransaction.serialize());
-
-      status.textContent = `Transaction sent! Waiting for confirmation...\nTxid: ${txid}`;
-      await connection.confirmTransaction(txid, 'confirmed');
-
-      status.textContent = `Mint created!\nMint Address: ${mint.publicKey.toBase58()}\n\nMinting tokens to your wallet...`;
-
-      const token = new splToken.Token(
-        connection,
-        mint.publicKey,
-        splToken.TOKEN_PROGRAM_ID,
-        window.solana
-      );
-
-      const userTokenAccount = await token.getOrCreateAssociatedAccountInfo(fromPubkey);
-
-      await token.mintTo(
-        userTokenAccount.address,
-        fromPubkey,
-        [],
-        supply * Math.pow(10, 9)
-      );
-
-      status.textContent += `\nSuccessfully minted ${supply} tokens to your wallet!`;
-
-    } catch (error) {
-      console.error(error);
-      status.style.color = 'red';
-
-      if (error.message.includes('User rejected the request')) {
-        status.textContent = 'Transaction cancelled by user.';
-      } else if (error.message.includes('Failed to sign transaction')) {
-        status.textContent = 'Failed to sign transaction. Please try again.';
-      } else if (error.message.includes('Blockhash not found')) {
-        status.textContent = 'Network busy or blockhash expired. Please try again.';
-      } else {
-        status.textContent = 'Failed to create token: ' + (error.message || error);
-      }
-    }
-  });
+  // Refresh every 60 seconds for near-live updates
+  setInterval(fetchCoins, 60000);
 </script>
 
 </body>
