@@ -128,8 +128,11 @@
   </section>
 </div>
 
+<!-- Load Solana web3 -->
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-<script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.js"></script>
+<!-- Load older stable version of SPL Token -->
+<script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.2.0/lib/index.iife.min.js"></script>
+
 <script>
   const toggleBtn = document.getElementById('toggleView');
   const liveSection = document.getElementById('liveSection');
@@ -138,7 +141,6 @@
   const status = document.getElementById('status');
   const createTokenBtn = document.getElementById('createTokenBtn');
 
-  // Toggle between Live and Create sections
   toggleBtn.addEventListener('click', () => {
     if (liveSection.classList.contains('active')) {
       liveSection.classList.remove('active');
@@ -153,7 +155,6 @@
     }
   });
 
-  // Fetch coin data from CoinGecko
   async function fetchCoins() {
     try {
       const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1');
@@ -178,7 +179,6 @@
   }
   fetchCoins();
 
-  // Token creation handler
   createTokenBtn.addEventListener('click', async () => {
     status.style.color = 'lightgreen';
     status.textContent = 'Connecting to Phantom Wallet...';
@@ -270,7 +270,6 @@
       console.error(error);
       status.style.color = 'red';
 
-      // Common error checks
       if (error.message.includes('User rejected the request')) {
         status.textContent = 'Transaction cancelled by user.';
       } else if (error.message.includes('Failed to sign transaction')) {
