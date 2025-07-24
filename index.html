@@ -95,6 +95,7 @@
     min-height: 20px;
     color: lightgreen;
     font-weight: 600;
+    white-space: pre-line;
   }
 </style>
 </head>
@@ -177,7 +178,7 @@
   }
   fetchCoins();
 
-  // Create token function using Phantom wallet and Solana Devnet
+  // Token creation
   createTokenBtn.addEventListener('click', async () => {
     status.style.color = 'lightgreen';
     status.textContent = 'Connecting to Phantom Wallet...';
@@ -194,7 +195,6 @@
       const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'), 'confirmed');
       const fromPubkey = window.solana.publicKey;
 
-      // Get inputs
       const tokenName = document.getElementById('tokenName').value.trim();
       const tokenSymbol = document.getElementById('tokenSymbol').value.trim();
       const supply = parseInt(document.getElementById('tokenSupply').value);
@@ -207,18 +207,18 @@
 
       status.textContent = 'Creating token mint account...';
 
-      // Create new mint account
-      const mint = solanaWeb3.Keypair.generate();
-      const lamports = await connection.getMinimumBalanceForRentExemption(solanaWeb3.MintLayout.span);
+      const MINT_SIZE = 82; // Correct mint account size
+      const lamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
 
-      // Create transaction to create mint
+      const mint = solanaWeb3.Keypair.generate();
+
       const transaction = new solanaWeb3.Transaction();
 
       transaction.add(
         solanaWeb3.SystemProgram.createAccount({
           fromPubkey,
           newAccountPubkey: mint.publicKey,
-          space: solanaWeb3.MintLayout.span,
+          space: MINT_SIZE,
           lamports,
           programId: solanaWeb3.TOKEN_PROGRAM_ID,
         }),
@@ -237,25 +237,19 @@
 
       transaction.partialSign(mint);
 
-      // Phantom wallet signs transaction
       const signedTransaction = await window.solana.signTransaction(transaction);
 
-      // Send and confirm transaction
       const txid = await connection.sendRawTransaction(signedTransaction.serialize());
       await connection.confirmTransaction(txid, 'confirmed');
 
-      status.textContent = `Mint created! Mint Address: ${mint.publicKey.toBase58()}`;
+      status.textContent = `Mint created!\nMint Address: ${mint.publicKey.toBase58()}`;
 
-      // Mint initial supply to user
-      status.textContent += '\nMinting initial supply to your wallet...';
+      status.textContent += `\nMinting ${supply} tokens to your wallet...`;
 
-      // Now mint tokens to user
       const token = new solanaWeb3.Token(connection, mint.publicKey, solanaWeb3.TOKEN_PROGRAM_ID, window.solana);
 
-      // Get or create associated token account for user
       const userTokenAccount = await token.getOrCreateAssociatedAccountInfo(fromPubkey);
 
-      // Mint the tokens (multiply by 10^decimals)
       await token.mintTo(
         userTokenAccount.address,
         fromPubkey,
