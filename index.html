@@ -1,6 +1,6 @@
 /**
  * VexApi Solana Buy/Sell App (All-in-One)
- * 
+ *
  * Instructions:
  * 1. Save this file as vexapi-solana.js
  * 2. Run:
@@ -14,7 +14,7 @@
  * 7. Connect your Phantom wallet
  * 8. View live coin data and buy/sell SOL tokens (simulated buy/sell by sending SOL)
  * 9. Portfolio updates automatically after transactions
- * 
+ *
  * Notes:
  * - This demo only sends SOL tokens to/from a dummy exchange wallet to simulate buy/sell.
  * - Real DEX swap integration (Serum, Raydium) is complex and not included here.
@@ -398,18 +398,20 @@ const frontendHTML = `
     coinsBody.innerHTML = filteredCoins.map(c => {
       const priceChange = c.price_change_percentage_24h;
       const priceClass = priceChange >= 0 ? "price-up" : "price-down";
-      return `
+      const dexLink = \`https://dexscreener.com/solana/\${c.id}\`;
+      return \`
         <tr>
-          <td>${c.name}</td>
-          <td>${c.symbol.toUpperCase()}</td>
-          <td>$${c.current_price.toFixed(4)}</td>
-          <td class="${priceClass}">${priceChange ? priceChange.toFixed(2) + "%" : "N/A"}</td>
+          <td>\${c.name}</td>
+          <td>\${c.symbol.toUpperCase()}</td>
+          <td>$\${c.current_price.toFixed(4)}</td>
+          <td class="\${priceClass}">\${priceChange ? priceChange.toFixed(2) + "%" : "N/A"}</td>
           <td>
-            <button class="btn-buy" data-coin="${c.symbol}" data-price="${c.current_price}">Buy</button>
-            <button class="btn-sell" data-coin="${c.symbol}" data-price="${c.current_price}">Sell</button>
+            <button class="btn-buy" data-coin="\${c.symbol}" data-price="\${c.current_price}">Buy</button>
+            <button class="btn-sell" data-coin="\${c.symbol}" data-price="\${c.current_price}">Sell</button>
+            <a href="\${dexLink}" target="_blank" style="margin-left:8px; color:#64d2ff; font-weight:700; text-decoration:none;">DEX</a>
           </td>
         </tr>
-      `;
+      \`;
     }).join("");
     // Add event listeners to buy/sell buttons
     document.querySelectorAll(".btn-buy").forEach(btn => btn.onclick = () => buySellAction(btn.dataset.coin, btn.dataset.price, "buy"));
@@ -447,7 +449,7 @@ const frontendHTML = `
       return;
     }
     portfolioBody.innerHTML = entries.map(([coin, qty]) => {
-      return `<tr><td>${coin.toUpperCase()}</td><td>${qty.toFixed(4)}</td></tr>`;
+      return \`<tr><td>\${coin.toUpperCase()}</td><td>\${qty.toFixed(4)}</td></tr>\`;
     }).join("");
   }
 
@@ -471,8 +473,6 @@ const frontendHTML = `
       alert("Invalid amount. Please enter a number between 0 and 1.");
       return;
     }
-    // Buy = send SOL from exchange wallet to user wallet
-    // Sell = send SOL from user wallet to exchange wallet
     try {
       await performSolanaTx(coin, amount, action);
     } catch(e) {
@@ -482,40 +482,25 @@ const frontendHTML = `
 
   // Perform Solana transaction on Devnet
   async function performSolanaTx(coin, amount, action){
-    // Check Phantom wallet & solana web3 loaded
     if(!window.solana || !window.solana.isPhantom){
       throw new Error("Phantom wallet not found");
     }
-    // Connect if not connected
     if(!walletPublicKey){
       const resp = await window.solana.connect();
       walletPublicKey = resp.publicKey.toString();
       walletAddressSpan.textContent = walletPublicKey.slice(0,4) + "..." + walletPublicKey.slice(-4);
     }
-
-    // Confirm network is Devnet
-    const network = window.solana.networkVersion || "devnet"; // no direct API, assume Devnet for demo
-    // Use solana web3
     const { PublicKey, Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL } = solanaWeb3;
-
-    // Setup connection to devnet
     const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-
-    // Prepare keys
     const userPubKey = new PublicKey(walletPublicKey);
     const exchangePubKey = new PublicKey(EXCHANGE_WALLET);
-
     let tx;
     if(action === "buy"){
-      // Simulate buy: exchange wallet sends SOL to user wallet
-      // For demo: We can't sign from exchange wallet private key (unknown), so fake buy by just adding portfolio entry
-      // So for demo, buying is simulated by portfolio update only, no actual tx
       alert("Buy simulated (no real transaction) because exchange wallet private key is not available.");
       await updatePortfolio(coin, amount, action, "SIMULATED_TX");
       await fetchPortfolio();
       return;
     } else if(action === "sell"){
-      // Sell = user sends SOL to exchange wallet
       const instruction = SystemProgram.transfer({
         fromPubkey: userPubKey,
         toPubkey: exchangePubKey,
@@ -523,11 +508,8 @@ const frontendHTML = `
       });
       tx = new Transaction().add(instruction);
     }
-
-    // Sign and send transaction
     try {
       const { signature } = await window.solana.signAndSendTransaction(tx);
-      // Wait for confirmation
       await connection.confirmTransaction(signature, "confirmed");
       alert(\`\${action.toUpperCase()} successful. Tx signature: \${signature}\`);
       await updatePortfolio(coin, amount, action, signature);
@@ -576,7 +558,6 @@ const frontendHTML = `
 
   // Init
   refreshUI();
-
 })();
 </script>
 </body>
