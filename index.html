@@ -2,118 +2,83 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VexApi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: Arial, sans-serif;
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #0b1e2d;
-      color: #fff;
+      padding: 0;
     }
     header {
-      background: #081726;
-      padding: 12px 24px;
+      background: #161b22;
+      padding: 15px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     header h1 {
-      color: #00ffe7;
       margin: 0;
+      font-size: 24px;
     }
-    .auth-buttons button {
-      background: #333;
-      border: none;
-      padding: 6px 12px;
-      margin-left: 8px;
-      cursor: pointer;
-      color: white;
+    .wallet, .auth {
+      display: flex;
+      gap: 10px;
     }
-    .search-bar {
-      margin: 20px auto;
-      text-align: center;
-    }
-    .search-bar input {
-      padding: 8px;
-      width: 80%;
-      max-width: 500px;
-      background: #101f2e;
-      color: white;
-      border: 1px solid #00ffe7;
+    input[type="text"] {
+      width: 200px;
+      padding: 6px;
       border-radius: 4px;
+      border: none;
     }
-    table {
-      width: 90%;
-      margin: auto;
+    .coin-table {
+      width: 100%;
       border-collapse: collapse;
-      background: #101f2e;
-      color: #fff;
+      margin-top: 10px;
     }
     th, td {
-      padding: 12px;
-      border-bottom: 1px solid #222;
-      text-align: center;
+      padding: 10px;
+      border-bottom: 1px solid #30363d;
+      text-align: left;
     }
-    th {
-      background: #142b3a;
-      cursor: pointer;
-    }
-    .price-up { color: #00ff88; }
-    .price-down { color: #ff3c3c; }
-    .button-demo {
-      background: #333;
-      color: #00ffe7;
-      padding: 4px 10px;
-      border: 1px solid #00ffe7;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .pagination {
-      text-align: center;
-      margin: 20px 0;
-    }
-    .pagination button {
-      background: #142b3a;
+    .price-up { color: #00ff99; }
+    .price-down { color: #ff5c5c; }
+    button {
+      background: #2ea043;
+      color: white;
+      padding: 5px 10px;
       border: none;
-      padding: 6px 10px;
-      color: #00ffe7;
-      margin: 0 4px;
+      border-radius: 3px;
       cursor: pointer;
     }
-    .auth-modal {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
+    button.sell {
+      background: #da3633;
+    }
+    .search-bar {
+      margin: 20px;
       display: flex;
       justify-content: center;
-      align-items: center;
+    }
+    #loginModal {
       display: none;
-    }
-    .auth-modal.active {
-      display: flex;
-    }
-    .auth-box {
-      background: #1b2e3f;
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%);
+      background: #1c1f24;
       padding: 20px;
-      border-radius: 6px;
-      text-align: center;
-      width: 300px;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      z-index: 1000;
     }
-    .auth-box input {
-      width: 90%;
+    #loginModal input {
+      margin-bottom: 10px;
+      width: 100%;
       padding: 8px;
-      margin: 10px 0;
+      border-radius: 4px;
       border: none;
-      background: #0e1d2b;
-      color: white;
-    }
-    .auth-box button {
-      background: #00ffe7;
-      border: none;
-      padding: 8px 20px;
-      cursor: pointer;
-      margin-top: 10px;
     }
   </style>
 </head>
@@ -121,174 +86,118 @@
 
 <header>
   <h1>VexApi</h1>
-  <div class="auth-buttons">
-    <button id="btn-login">Login</button>
-    <button id="btn-logout" style="display:none;">Logout</button>
+  <div class="auth">
+    <button onclick="showLogin()">Login / Sign Up</button>
+    <button onclick="connectWallet()">Connect Wallet</button>
   </div>
 </header>
 
 <div class="search-bar">
-  <input type="text" id="search" placeholder="Search for coins...">
+  <input type="text" id="search" placeholder="Search coins..." />
 </div>
 
-<table id="coin-table">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Symbol</th>
-      <th>Price</th>
-      <th>Change 24h</th>
-      <th>Market Cap</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td colspan="6">Loading coins...</td></tr>
-  </tbody>
-</table>
+<div style="overflow-x:auto;">
+  <table class="coin-table" id="coin-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Symbol</th>
+        <th>Price</th>
+        <th>Change 24h</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="coin-body"></tbody>
+  </table>
+</div>
 
-<div class="pagination" id="pagination"></div>
-
-<!-- Auth Modal -->
-<div class="auth-modal" id="auth-modal">
-  <div class="auth-box">
-    <h3 id="auth-title">Login</h3>
-    <input type="text" id="auth-email" placeholder="Email">
-    <input type="password" id="auth-password" placeholder="Password">
-    <button id="auth-submit">Submit</button>
-    <p><a href="#" id="auth-toggle">Switch to Signup</a></p>
-  </div>
+<!-- Login Modal -->
+<div id="loginModal">
+  <h3>Login / Sign Up</h3>
+  <input type="text" id="username" placeholder="Username" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="login()">Submit</button>
 </div>
 
 <script>
-  const tableBody = document.querySelector("#coin-table tbody");
-  const pagination = document.getElementById("pagination");
-  const search = document.getElementById("search");
-  const authModal = document.getElementById("auth-modal");
-  const authTitle = document.getElementById("auth-title");
-  const authSubmit = document.getElementById("auth-submit");
-  const authToggle = document.getElementById("auth-toggle");
-  const authEmail = document.getElementById("auth-email");
-  const authPassword = document.getElementById("auth-password");
-  const btnLogin = document.getElementById("btn-login");
-  const btnLogout = document.getElementById("btn-logout");
-
-  let allCoins = [];
-  let currentPage = 1;
-  const coinsPerPage = 15;
-  let currentUser = null;
-  let users = JSON.parse(localStorage.getItem("vexapi-users") || "{}");
+  let coins = [], user = null, wallet = null;
 
   async function fetchCoins() {
-    try {
-      const res = await fetch("https://api.coinlore.net/api/tickers/");
-      const data = await res.json();
-      allCoins = data.data;
-      renderTable();
-    } catch (e) {
-      tableBody.innerHTML = `<tr><td colspan="6">Error loading coins</td></tr>`;
-    }
+    const res = await fetch('https://api.coinlore.net/api/tickers/?start=0&limit=100');
+    const data = await res.json();
+    coins = data.data;
+    renderCoins(coins);
   }
 
-  function renderTable() {
-    const filtered = allCoins.filter(coin =>
-      coin.name.toLowerCase().includes(search.value.toLowerCase()) ||
-      coin.symbol.toLowerCase().includes(search.value.toLowerCase())
-    );
-    const start = (currentPage - 1) * coinsPerPage;
-    const currentCoins = filtered.slice(start, start + coinsPerPage);
-
-    tableBody.innerHTML = '';
-    currentCoins.forEach(coin => {
-      const change = parseFloat(coin.percent_change_24h);
+  function renderCoins(list) {
+    const tbody = document.getElementById("coin-body");
+    tbody.innerHTML = "";
+    list.forEach(coin => {
       const row = document.createElement("tr");
+      const priceChangeClass = coin.percent_change_24h >= 0 ? "price-up" : "price-down";
       row.innerHTML = `
         <td>${coin.name}</td>
         <td>${coin.symbol}</td>
-        <td>$${parseFloat(coin.price_usd).toFixed(4)}</td>
-        <td class="${change >= 0 ? 'price-up' : 'price-down'}">${change.toFixed(2)}%</td>
-        <td>$${parseFloat(coin.market_cap_usd).toLocaleString()}</td>
+        <td>$${Number(coin.price_usd).toFixed(4)}</td>
+        <td class="${priceChangeClass}">${coin.percent_change_24h}%</td>
         <td>
-          <button class="button-demo" onclick="alert('Buy ${coin.symbol} (Demo only)')">Buy</button>
-          <button class="button-demo" onclick="alert('Sell ${coin.symbol} (Demo only)')">Sell</button>
-        </td>
-      `;
-      tableBody.appendChild(row);
+          <button onclick="buyCoin('${coin.name}')">Buy</button>
+          <button class="sell" onclick="sellCoin('${coin.name}')">Sell</button>
+        </td>`;
+      tbody.appendChild(row);
     });
-
-    renderPagination(filtered.length);
   }
 
-  function renderPagination(total) {
-    pagination.innerHTML = '';
-    const pages = Math.ceil(total / coinsPerPage);
-    for (let i = 1; i <= pages; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i;
-      if (i === currentPage) btn.style.background = "#00ffe7";
-      btn.onclick = () => {
-        currentPage = i;
-        renderTable();
-      };
-      pagination.appendChild(btn);
+  function buyCoin(name) {
+    alert(`🟢 Bought demo ${name}!`);
+    savePortfolio(name, 1);
+  }
+
+  function sellCoin(name) {
+    alert(`🔴 Sold demo ${name}!`);
+    savePortfolio(name, -1);
+  }
+
+  function connectWallet() {
+    if (window.solana && window.solana.isPhantom) {
+      window.solana.connect().then(acc => {
+        wallet = acc.publicKey.toString();
+        alert("Connected wallet: " + wallet);
+      });
+    } else {
+      alert("Phantom Wallet not found!");
     }
   }
 
-  search.addEventListener("input", () => {
-    currentPage = 1;
-    renderTable();
+  function showLogin() {
+    document.getElementById("loginModal").style.display = "block";
+  }
+
+  function login() {
+    const userVal = document.getElementById("username").value;
+    const passVal = document.getElementById("password").value;
+    if (userVal && passVal) {
+      user = { username: userVal, portfolio: {} };
+      alert(`Welcome, ${user.username}!`);
+      document.getElementById("loginModal").style.display = "none";
+    }
+  }
+
+  function savePortfolio(coinName, amount) {
+    if (!user) return alert("Login required");
+    if (!user.portfolio[coinName]) user.portfolio[coinName] = 0;
+    user.portfolio[coinName] += amount;
+  }
+
+  document.getElementById("search").addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = coins.filter(c =>
+      c.name.toLowerCase().includes(query) || c.symbol.toLowerCase().includes(query)
+    );
+    renderCoins(filtered);
   });
 
-  // Auth
-  btnLogin.onclick = () => {
-    authModal.classList.add("active");
-    authTitle.textContent = "Login";
-    authSubmit.textContent = "Login";
-  };
-  btnLogout.onclick = () => {
-    currentUser = null;
-    sessionStorage.removeItem("vexapi-user");
-    updateAuthUI();
-  };
-  authToggle.onclick = e => {
-    e.preventDefault();
-    const isLogin = authTitle.textContent === "Login";
-    authTitle.textContent = isLogin ? "Signup" : "Login";
-    authSubmit.textContent = isLogin ? "Signup" : "Login";
-  };
-  authSubmit.onclick = () => {
-    const email = authEmail.value.toLowerCase();
-    const pass = authPassword.value;
-    if (authSubmit.textContent === "Login") {
-      if (users[email] && users[email] === pass) {
-        currentUser = email;
-        sessionStorage.setItem("vexapi-user", email);
-        updateAuthUI();
-      } else alert("Invalid login.");
-    } else {
-      if (users[email]) {
-        alert("User exists.");
-      } else {
-        users[email] = pass;
-        localStorage.setItem("vexapi-users", JSON.stringify(users));
-        alert("Signed up! You can now log in.");
-        authTitle.textContent = "Login";
-        authSubmit.textContent = "Login";
-      }
-    }
-    authModal.classList.remove("active");
-  };
-
-  function updateAuthUI() {
-    btnLogin.style.display = currentUser ? "none" : "inline-block";
-    btnLogout.style.display = currentUser ? "inline-block" : "none";
-  }
-
-  // Init
-  currentUser = sessionStorage.getItem("vexapi-user");
-  updateAuthUI();
   fetchCoins();
 </script>
-
 </body>
 </html>
