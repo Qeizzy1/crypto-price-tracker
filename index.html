@@ -3,36 +3,29 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dexscreener UI Clone with 50 Coins</title>
+<title>Dexscreener Live Clone with Sparklines & Prediction</title>
 <style>
-  /* Reset */
-  * {
-    box-sizing: border-box;
-  }
+  /* Reset & base styles */
+  * { box-sizing: border-box; }
   body, html {
-    margin: 0; padding: 0;
-    height: 100%;
+    margin: 0; padding: 0; height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     background-color: #0e1117;
     color: #c9d1d9;
     user-select: none;
   }
-
   #app {
     display: flex;
     height: 100vh;
   }
-
-  /* Sidebar */
   .sidebar {
-    width: 320px;
+    width: 360px;
     background-color: #161b22;
     border-right: 1px solid #21262d;
     display: flex;
     flex-direction: column;
   }
-
   .sidebar-header {
     padding: 1rem 1.5rem;
     font-weight: 700;
@@ -40,60 +33,41 @@
     color: #58a6ff;
     border-bottom: 1px solid #21262d;
   }
-
   .coin-list {
     flex-grow: 1;
     overflow-y: auto;
   }
-
   table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
   }
-
   thead tr {
     color: #8b949e;
     font-weight: 600;
     border-bottom: 1px solid #21262d;
   }
-
   th, td {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
   }
-
-  th {
-    text-align: left;
-  }
-
-  td.price, td.change {
+  th { text-align: left; }
+  td.price, td.change, td.sparkline {
     text-align: right;
+    vertical-align: middle;
   }
-
   tbody tr {
     cursor: pointer;
     transition: background-color 0.15s ease;
   }
-
-  tbody tr:hover {
-    background-color: #161b22;
+  tbody tr:hover { background-color: #161b22; }
+  tbody tr.selected { background-color: #21262d; }
+  td.change.positive { color: #3fb950; font-weight: 600; }
+  td.change.negative { color: #f85149; font-weight: 600; }
+  td.sparkline canvas {
+    display: block;
+    width: 80px;
+    height: 20px;
   }
-
-  tbody tr.selected {
-    background-color: #21262d;
-  }
-
-  td.change.positive {
-    color: #3fb950;
-    font-weight: 600;
-  }
-
-  td.change.negative {
-    color: #f85149;
-    font-weight: 600;
-  }
-
-  /* Main content */
   .main-content {
     flex-grow: 1;
     background-color: #161b22;
@@ -103,80 +77,65 @@
     justify-content: center;
     align-items: center;
   }
-
   .details-card {
-    max-width: 480px;
+    max-width: 520px;
     background-color: #21262d;
     border-radius: 12px;
     padding: 2rem 3rem;
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     text-align: center;
   }
-
   .details-symbol {
-    font-size: 3rem;
+    font-size: 3.5rem;
     margin-bottom: 0.25rem;
     color: #58a6ff;
   }
-
   .details-name {
     margin-top: 0;
     margin-bottom: 1.5rem;
     color: #8b949e;
     font-weight: 400;
   }
-
   .details-price {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     margin-bottom: 1rem;
   }
-
-  .details-price strong {
-    font-weight: 700;
-  }
-
+  .details-price strong { font-weight: 700; }
   .details-change {
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
     font-weight: 700;
   }
-
-  .details-change.positive {
-    color: #3fb950;
-  }
-
-  .details-change.negative {
-    color: #f85149;
-  }
-
+  .details-change.positive { color: #3fb950; }
+  .details-change.negative { color: #f85149; }
   .details-expected {
     font-size: 1.5rem;
     font-weight: 700;
     color: #79c0ff;
   }
-
-  /* Scrollbar styling for sidebar */
+  .loading {
+    color: #8b949e;
+    font-size: 1.25rem;
+    margin-top: 2rem;
+  }
+  /* Scrollbar styling */
   .coin-list::-webkit-scrollbar {
     width: 8px;
   }
-
   .coin-list::-webkit-scrollbar-thumb {
     background-color: #30363d;
     border-radius: 4px;
   }
-
   .coin-list::-webkit-scrollbar-track {
     background-color: #161b22;
   }
-
-  /* Responsive */
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     #app {
       flex-direction: column;
     }
     .sidebar {
       width: 100%;
-      height: 240px;
+      height: 260px;
       border-right: none;
       border-bottom: 1px solid #21262d;
     }
@@ -202,10 +161,11 @@
             <th>Symbol</th>
             <th class="price">Price</th>
             <th class="change">24h %</th>
+            <th class="sparkline">7d</th>
           </tr>
         </thead>
         <tbody id="coin-tbody">
-          <!-- Coins get inserted here by JS -->
+          <tr><td colspan="4" style="text-align:center; padding:2rem;">Loading coins...</td></tr>
         </tbody>
       </table>
     </div>
@@ -213,112 +173,196 @@
 
   <main class="main-content">
     <div class="details-card" id="details-card">
-      <!-- Details get inserted here by JS -->
       <p style="color:#8b949e; font-size:1.25rem;">Select a coin from the list</p>
     </div>
   </main>
 </div>
 
 <script>
-  // Generate 50 sample coins with random data
-  const coinSymbols = [
-    "BTC", "ETH", "SOL", "ADA", "BNB", "XRP", "DOT", "DOGE", "LTC", "SHIB",
-    "AVAX", "MATIC", "TRX", "LINK", "ATOM", "ALGO", "FIL", "XLM", "VET", "ICP",
-    "THETA", "NEO", "EOS", "XTZ", "KSM", "AAVE", "MKR", "COMP", "SUSHI", "YFI",
-    "CRV", "ZRX", "BAL", "SNX", "REN", "UMA", "GRT", "BAT", "1INCH", "CEL",
-    "CHZ", "ENJ", "DASH", "QTUM", "NANO", "ZIL", "HOT", "WAVES", "KNC", "OMG"
-  ];
-
-  function randomPrice() {
-    return (Math.random() * 50000 + 0.01).toFixed(4);
-  }
-
-  function randomChange() {
-    return (Math.random() * 20 - 10).toFixed(2); // from -10% to +10%
-  }
-
-  function randomExpectedUp() {
-    return (Math.random() * 15).toFixed(2);
-  }
-
-  const coins = coinSymbols.map((sym, i) => ({
-    id: i + 1,
-    symbol: sym,
-    name: sym + " Coin",
-    price: randomPrice(),
-    changePercent: randomChange(),
-    expectedUpPercent: randomExpectedUp(),
-  }));
-
   const tbody = document.getElementById("coin-tbody");
   const detailsCard = document.getElementById("details-card");
-
+  let coinsData = [];
   let selectedRow = null;
-  let selectedCoin = null;
+  let refreshInterval = 30000; // 30 seconds for API calls
+  let updateInterval = 1000;   // 1 sec UI refresh
 
-  function renderCoins() {
-    coins.forEach((coin, index) => {
+  // Utility to draw sparkline on a canvas with an array of points
+  function drawSparkline(canvas, prices) {
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    if (!prices || prices.length < 2) return;
+
+    const max = Math.max(...prices);
+    const min = Math.min(...prices);
+    const range = max - min || 1;
+    ctx.strokeStyle = "#58a6ff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    prices.forEach((price, i) => {
+      const x = (i / (prices.length - 1)) * w;
+      const y = h - ((price - min) / range) * h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+  }
+
+  // Simple linear regression y = ax + b to find slope for prediction
+  function linearRegression(prices) {
+    const n = prices.length;
+    const x = [...Array(n).keys()];
+    const sumX = x.reduce((a,b) => a+b, 0);
+    const sumY = prices.reduce((a,b) => a+b, 0);
+    const sumXY = x.reduce((acc, xi, i) => acc + xi * prices[i], 0);
+    const sumXX = x.reduce((acc, xi) => acc + xi * xi, 0);
+
+    const denominator = n * sumXX - sumX * sumX;
+    if (denominator === 0) return 0;
+
+    const a = (n * sumXY - sumX * sumY) / denominator; // slope
+    // const b = (sumY - a * sumX) / n; // intercept not needed here
+
+    return a;
+  }
+
+  // Predict expected % change over next 24h based on slope of last 7d prices
+  function predictExpectedUp(prices) {
+    const slope = linearRegression(prices);
+    // Slope is price units per day (ish). Normalize to % relative to last price:
+    const lastPrice = prices[prices.length -1];
+    if (!lastPrice) return 0;
+    const dailyPctChange = (slope / lastPrice) * 100;
+    // Clamp between -20% and +20% for sanity
+    return Math.min(Math.max(dailyPctChange, -20), 20).toFixed(2);
+  }
+
+  // Format numbers nicely
+  function formatPrice(p) {
+    if (p >= 1) return p.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    else return p.toPrecision(4);
+  }
+
+  // Fetch and update coins data from CoinGecko
+  async function fetchCoins() {
+    try {
+      const res = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true");
+      if (!res.ok) throw new Error("API error");
+      const data = await res.json();
+      coinsData = data;
+      renderCoinList();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#f85149;">Failed to load coins</td></tr>`;
+      console.error(e);
+    }
+  }
+
+  // Render the sidebar coin list with sparklines
+  function renderCoinList() {
+    tbody.innerHTML = "";
+    coinsData.forEach((coin, i) => {
       const tr = document.createElement("tr");
-      tr.dataset.id = coin.id;
+      tr.dataset.index = i;
 
-      // Symbol cell
-      const tdSymbol = document.createElement("td");
-      tdSymbol.textContent = coin.symbol;
-      tr.appendChild(tdSymbol);
+      // Symbol
+      const tdSym = document.createElement("td");
+      tdSym.textContent = coin.symbol.toUpperCase();
+      tr.appendChild(tdSym);
 
-      // Price cell
+      // Price
       const tdPrice = document.createElement("td");
-      tdPrice.textContent = "$" + coin.price;
+      tdPrice.textContent = "$" + formatPrice(coin.current_price);
       tdPrice.classList.add("price");
       tr.appendChild(tdPrice);
 
-      // Change cell
+      // Change 24h
+      const chg = coin.price_change_percentage_24h ?? 0;
       const tdChange = document.createElement("td");
-      tdChange.textContent = (coin.changePercent >= 0 ? "+" : "") + coin.changePercent + "%";
+      tdChange.textContent = (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%";
       tdChange.classList.add("change");
-      tdChange.classList.add(coin.changePercent >= 0 ? "positive" : "negative");
+      tdChange.classList.add(chg >= 0 ? "positive" : "negative");
       tr.appendChild(tdChange);
 
-      // Click event to select coin
-      tr.addEventListener("click", () => {
-        selectCoin(coin, tr);
-      });
+      // Sparkline
+      const tdSpark = document.createElement("td");
+      tdSpark.classList.add("sparkline");
+      const canvas = document.createElement("canvas");
+      canvas.width = 80;
+      canvas.height = 20;
+      tdSpark.appendChild(canvas);
+      tr.appendChild(tdSpark);
+
+      // Draw sparkline from 7d prices
+      if (coin.sparkline_in_7d && coin.sparkline_in_7d.price) {
+        drawSparkline(canvas, coin.sparkline_in_7d.price);
+      }
+
+      tr.addEventListener("click", () => selectCoin(i, tr));
 
       tbody.appendChild(tr);
 
-      // Auto select first coin
-      if (index === 0) {
-        selectCoin(coin, tr);
-      }
+      // Auto select first coin on initial load
+      if (i === 0) selectCoin(0, tr);
     });
   }
 
-  function selectCoin(coin, row) {
-    selectedCoin = coin;
+  // Selected coin and row
+  let selectedIndex = 0;
+  function selectCoin(i, row) {
+    selectedIndex = i;
+    const coin = coinsData[i];
+    if (!coin) return;
 
-    // Update details panel
+    // Predict expected up %
+    const expectedUp = predictExpectedUp(coin.sparkline_in_7d.price);
+
     detailsCard.innerHTML = `
-      <h1 class="details-symbol">${coin.symbol}</h1>
+      <h1 class="details-symbol">${coin.symbol.toUpperCase()}</h1>
       <h3 class="details-name">${coin.name}</h3>
-      <p class="details-price"><strong>Current Price:</strong> $${coin.price}</p>
-      <p class="details-change ${coin.changePercent >= 0 ? "positive" : "negative"}">
-        Gone up: ${coin.changePercent >= 0 ? "+" : ""}${coin.changePercent}%
+      <p class="details-price"><strong>Current Price:</strong> $${formatPrice(coin.current_price)}</p>
+      <p class="details-change ${coin.price_change_percentage_24h >= 0 ? "positive" : "negative"}">
+        Gone up: ${coin.price_change_percentage_24h >= 0 ? "+" : ""}${coin.price_change_percentage_24h.toFixed(2)}%
       </p>
       <p class="details-expected">
-        Expected to go up: ${coin.expectedUpPercent}%
+        Expected to go up: ${expectedUp}%
       </p>
     `;
 
-    // Highlight selected row
-    if (selectedRow) {
-      selectedRow.classList.remove("selected");
-    }
+    if (selectedRow) selectedRow.classList.remove("selected");
     selectedRow = row;
     selectedRow.classList.add("selected");
   }
 
-  renderCoins();
+  // Update prices every second for smooth UI updates (without new API calls)
+  function smoothUpdate() {
+    if (!coinsData.length) return;
+    // To keep things simple, we just re-render coin list sparklines every second
+    // but since sparklines don’t change within 30s, skip redraw here to save CPU
+
+    // Update prices and changes for selected coin (simulate real-time):
+    // We just re-display the same data because CoinGecko rate limits us.
+    // You can implement interpolation here if you want.
+
+    // Also update main panel with the same data to refresh expectedUp (optional)
+    if (selectedIndex !== null) {
+      const rows = tbody.querySelectorAll("tr");
+      if (rows[selectedIndex]) {
+        selectCoin(selectedIndex, rows[selectedIndex]);
+      }
+    }
+  }
+
+  // Initial fetch + periodic refresh
+  fetchCoins();
+  setInterval(fetchCoins, refreshInterval);
+  setInterval(smoothUpdate, updateInterval);
+
 </script>
 
 </body>
 </html>
+
