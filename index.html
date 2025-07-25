@@ -3,80 +3,158 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VexApi - Live Crypto Tracker</title>
+<title>VexApi Pro - Crypto Tracker with Login & Watchlist</title>
 <style>
+  /* ====== Reset & Body ====== */
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   body {
     background: #121720;
     color: #a0d8f7;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    margin: 20px;
+    padding: 20px;
+    min-height: 100vh;
+    user-select: none;
   }
-  #loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #112133;
-    border-top: 5px solid #00ffe7;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 30px auto;
+  h1 {
+    color: #38c7ff;
+    margin-bottom: 15px;
+    text-shadow: 0 0 8px #1de9b6, 0 0 16px #38c7ff;
   }
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
+  /* ====== Header ====== */
+  #header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  #header button {
+    background: #263544cc;
+    border: none;
+    color: #80e8ffcc;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 6px #1aeaffaa;
+    transition: background 0.3s, color 0.3s;
+    user-select: none;
+  }
+  #header button:hover {
+    background: #1c2a3bdd;
+    color: #00f4ff;
+    box-shadow: 0 0 20px #00fff7dd;
+  }
+  /* ====== Controls ====== */
+  #controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
   }
   #search {
-    width: 300px;
-    padding: 8px;
-    margin-bottom: 15px;
+    padding: 10px 14px;
     border-radius: 12px;
     border: none;
     background: #112133;
     color: #6bf3ff;
     font-size: 1rem;
+    min-width: 250px;
+    user-select: text;
   }
+  #sort-select, #chain-filter {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: none;
+    background: #263544cc;
+    color: #80e8ffcc;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+  }
+  #sort-select:hover, #chain-filter:hover {
+    background: #1c2a3bdd;
+    color: #00f4ff;
+  }
+  #trending-btn {
+    padding: 8px 14px;
+    background: #263544cc;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    color: #80e8ffcc;
+    cursor: pointer;
+    box-shadow: 0 0 6px #1aeaffaa;
+    user-select: none;
+    transition: background 0.3s;
+  }
+  #trending-btn:hover {
+    background: #1c2a3bdd;
+    color: #00f4ff;
+    box-shadow: 0 0 20px #00fff7dd;
+  }
+  /* ====== Table ====== */
   table {
     width: 100%;
     border-collapse: collapse;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 25px #00ffe7aa;
+  }
+  thead {
+    background: #0f1829;
   }
   th, td {
-    padding: 12px 10px;
+    padding: 12px 15px;
     text-align: left;
-    border-bottom: 1px solid #263544;
+    font-size: 1rem;
+    color: #a0d8f7;
   }
   th {
     cursor: pointer;
     user-select: none;
+    position: relative;
   }
   th:hover {
     color: #00ffe7;
   }
+  tr:nth-child(even) {
+    background: #0b1220;
+  }
+  tr:hover {
+    background: #112933dd;
+  }
   .price-up {
     color: #33ff99;
+    text-shadow: 0 0 6px #33ff99aa;
   }
   .price-down {
     color: #ff3366;
+    text-shadow: 0 0 6px #ff3366aa;
   }
   a.coin-link {
     color: #00bfff;
+    font-weight: 700;
     text-decoration: none;
-    font-weight: 600;
   }
   a.coin-link:hover {
     text-decoration: underline;
   }
+  /* ====== Pagination ====== */
   .pagination {
     margin-top: 15px;
     text-align: center;
+    user-select: none;
   }
   .pagination button {
     margin: 0 5px;
-    padding: 6px 12px;
-    border-radius: 8px;
+    padding: 8px 14px;
+    border-radius: 12px;
     border: none;
     background: #263544cc;
     color: #80e8ffcc;
-    cursor: pointer;
     font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s;
   }
   .pagination button:hover {
     background: #1c2a3bdd;
@@ -87,25 +165,200 @@
     color: #677e96;
     cursor: not-allowed;
   }
+  /* ====== Loading Spinner ====== */
+  #loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #112133;
+    border-top: 5px solid #00ffe7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 40px auto;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+  /* ====== Watchlist Star Button ====== */
+  .watch-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #444c5c;
+    transition: color 0.3s ease;
+    user-select: none;
+  }
+  .watch-btn.active {
+    color: #00ffe7;
+    text-shadow: 0 0 8px #00ffe7bb;
+  }
+  .watch-btn:hover {
+    color: #00ffe7;
+  }
+  /* ====== Alerts input ====== */
+  .alert-input {
+    width: 75px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: none;
+    background: #112133;
+    color: #6bf3ff;
+    font-size: 0.9rem;
+    transition: box-shadow 0.3s ease;
+    user-select: text;
+  }
+  .alert-input:focus {
+    outline: none;
+    box-shadow:
+      inset 0 0 12px #00ffe7ee,
+      0 0 25px #00e2ffbb;
+  }
+  /* ====== Auth modal ====== */
+  #auth-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    user-select: none;
+  }
+  #auth-modal.active {
+    display: flex;
+  }
+  #auth-content {
+    background: #112132ee;
+    padding: 25px 30px;
+    border-radius: 20px;
+    width: 350px;
+    max-width: 90vw;
+    color: #a0d8f7;
+    box-shadow: 0 0 30px #00ffe7bb;
+    user-select: text;
+  }
+  #auth-content h2 {
+    color: #00ffe7;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  #auth-content label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 600;
+  }
+  #auth-content input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: none;
+    background: #112133;
+    color: #6bf3ff;
+    font-size: 1rem;
+    box-shadow:
+      inset 0 0 8px #00ffe7aa,
+      0 0 10px #00e2ff44;
+  }
+  #auth-content input:focus {
+    outline: none;
+    box-shadow:
+      inset 0 0 12px #00ffe7ee,
+      0 0 25px #00e2ffbb;
+  }
+  #auth-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+  }
+  #auth-buttons button {
+    flex: 1;
+    margin: 0 5px;
+    padding: 10px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 15px #00bfffbb;
+    transition: background 0.3s;
+    user-select: none;
+  }
+  #auth-login-btn {
+    background: #00bfffcc;
+    color: #012b3d;
+  }
+  #auth-login-btn:hover {
+    background: #0099ddcc;
+  }
+  #auth-signup-btn {
+    background: #33ff99cc;
+    color: #023a20;
+  }
+  #auth-signup-btn:hover {
+    background: #27d07acc;
+  }
+  #auth-switch {
+    margin-top: 15px;
+    text-align: center;
+    cursor: pointer;
+    color: #55aaff;
+    font-weight: 600;
+    user-select: none;
+  }
+  #auth-switch:hover {
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
 
-<h1>VexApi - Live Crypto Tracker</h1>
+<h1>VexApi Pro - Crypto Tracker</h1>
 
-<input type="text" id="search" placeholder="Search coins by name or symbol..." />
+<div id="header">
+  <div>
+    <button id="btn-login">Login</button>
+    <button id="btn-logout" style="display:none;">Logout</button>
+  </div>
+  <div id="welcome-msg" style="font-weight:700; font-size:1.1rem;"></div>
+</div>
+
+<div id="controls">
+  <input type="text" id="search" placeholder="Search coins by name or symbol..." autocomplete="off" />
+  <select id="sort-select" title="Sort coins">
+    <option value="market_cap_desc">Market Cap ▼</option>
+    <option value="market_cap_asc">Market Cap ▲</option>
+    <option value="price_desc">Price ▼</option>
+    <option value="price_asc">Price ▲</option>
+    <option value="change_desc">24h Change ▼</option>
+    <option value="change_asc">24h Change ▲</option>
+    <option value="name_asc">Name A-Z</option>
+    <option value="name_desc">Name Z-A</option>
+  </select>
+  <select id="chain-filter" title="Filter by Chain">
+    <option value="all">All Chains</option>
+    <option value="ethereum">Ethereum</option>
+    <option value="binance-smart-chain">BSC</option>
+    <option value="solana">Solana</option>
+    <option value="polygon">Polygon</option>
+  </select>
+  <button id="trending-btn" title="Show Trending Coins">Trending 🔥</button>
+</div>
 
 <div id="loading-spinner"></div>
 
 <table id="coins-table" style="display:none;">
   <thead>
     <tr>
+      <th data-key="watchlist" style="width:40px;">★</th>
       <th data-key="name">Name</th>
       <th data-key="symbol">Symbol</th>
       <th data-key="current_price">Price (USD)</th>
       <th data-key="price_change_percentage_24h">24h Change %</th>
       <th data-key="market_cap">Market Cap</th>
+      <th data-key="total_volume">24h Volume</th>
+      <th>Chain</th>
       <th>Link</th>
+      <th>Alert $</th>
     </tr>
   </thead>
   <tbody id="coin-tbody"></tbody>
@@ -113,162 +366,100 @@
 
 <div class="pagination" id="pagination"></div>
 
+<!-- Auth modal -->
+<div id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" style="display:none;">
+  <div id="auth-content">
+    <h2 id="auth-title">Login</h2>
+    <form id="auth-form">
+      <label for="auth-email">Email:</label>
+      <input type="email" id="auth-email" required autocomplete="username" />
+      <label for="auth-password">Password:</label>
+      <input type="password" id="auth-password" required autocomplete="current-password" />
+      <div id="auth-buttons">
+        <button type="submit" id="auth-login-btn">Login</button>
+        <button type="button" id="auth-signup-btn">Sign Up</button>
+      </div>
+    </form>
+    <p id="auth-switch">Don't have an account? Sign Up</p>
+  </div>
+</div>
+
 <script>
+(() => {
+  // === State & vars ===
+  let coins = [];
+  let filteredCoins = [];
+  let currentPage = 1;
+  const coinsPerPage = 30;
+  let currentSort = { key: 'market_cap', order: 'desc' };
+  let trendingOnly = false;
+  let chainFilter = 'all';
+  let loggedInUser = null; // will hold email string
+  let watchlist = {};
+  let alerts = {};
+
+  // DOM elements
   const spinner = document.getElementById('loading-spinner');
   const table = document.getElementById('coins-table');
   const tbody = document.getElementById('coin-tbody');
   const searchInput = document.getElementById('search');
   const pagination = document.getElementById('pagination');
+  const sortSelect = document.getElementById('sort-select');
+  const chainFilterSelect = document.getElementById('chain-filter');
+  const trendingBtn = document.getElementById('trending-btn');
+  const btnLogin = document.getElementById('btn-login');
+  const btnLogout = document.getElementById('btn-logout');
+  const welcomeMsg = document.getElementById('welcome-msg');
+  const authModal = document.getElementById('auth-modal');
+  const authForm = document.getElementById('auth-form');
+  const authTitle = document.getElementById('auth-title');
+  const authEmail = document.getElementById('auth-email');
+  const authPassword = document.getElementById('auth-password');
+  const authLoginBtn = document.getElementById('auth-login-btn');
+  const authSignupBtn = document.getElementById('auth-signup-btn');
+  const authSwitch = document.getElementById('auth-switch');
 
-  let coins = [];
-  let filteredCoins = [];
-  let currentPage = 1;
-  const coinsPerPage = 20;
-  let currentSort = { key: 'market_cap', order: 'desc' };
+  // === LocalStorage helpers ===
+  function saveUserData() {
+    if(!loggedInUser) return;
+    localStorage.setItem(`vexapi-watchlist-${loggedInUser}`, JSON.stringify(watchlist));
+    localStorage.setItem(`vexapi-alerts-${loggedInUser}`, JSON.stringify(alerts));
+  }
+  function loadUserData() {
+    if(!loggedInUser) return;
+    watchlist = JSON.parse(localStorage.getItem(`vexapi-watchlist-${loggedInUser}`) || '{}');
+    alerts = JSON.parse(localStorage.getItem(`vexapi-alerts-${loggedInUser}`) || '{}');
+  }
+  // Save users (emails + passwords hashed minimally)
+  // (This is just mock - do NOT use in production)
+  function getUsers() {
+    return JSON.parse(localStorage.getItem('vexapi-users') || '{}');
+  }
+  function saveUsers(users) {
+    localStorage.setItem('vexapi-users', JSON.stringify(users));
+  }
 
-  async function fetchCoins() {
-    try {
-      const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&price_change_percentage=24h');
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      alert('Failed to fetch coin data.');
-      console.error(error);
-      return [];
+  // === Authentication ===
+  function showAuthModal(loginMode = true) {
+    authModal.style.display = 'flex';
+    authTitle.textContent = loginMode ? 'Login' : 'Sign Up';
+    authLoginBtn.style.display = loginMode ? 'inline-block' : 'none';
+    authSignupBtn.style.display = loginMode ? 'none' : 'inline-block';
+    authSwitch.textContent = loginMode ? "Don't have an account? Sign Up" : "Already have an account? Login";
+    authEmail.value = '';
+    authPassword.value = '';
+    authEmail.focus();
+    authForm.dataset.mode = loginMode ? 'login' : 'signup';
+  }
+  function hideAuthModal() {
+    authModal.style.display = 'none';
+  }
+  function hashPassword(password) {
+    // simple hash for demo
+    let hash = 0;
+    for(let i=0; i<password.length; i++) {
+      hash = ((hash << 5) - hash) + password.charCodeAt(i);
+      hash |= 0; // convert to 32bit int
     }
+    return hash.toString();
   }
-
-  function renderTable(coinsToRender) {
-    tbody.innerHTML = '';
-    if(coinsToRender.length === 0){
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No coins found.</td></tr>';
-      return;
-    }
-    for(const coin of coinsToRender){
-      const changeClass = coin.price_change_percentage_24h > 0 ? 'price-up' : (coin.price_change_percentage_24h < 0 ? 'price-down' : '');
-      const coinLink = `https://dexscreener.com/ethereum/${coin.id}`;
-      tbody.innerHTML += `
-        <tr>
-          <td>${coin.name}</td>
-          <td>${coin.symbol.toUpperCase()}</td>
-          <td>$${coin.current_price.toFixed(5)}</td>
-          <td class="${changeClass}">${coin.price_change_percentage_24h?.toFixed(2) ?? '0.00'}%</td>
-          <td>$${coin.market_cap.toLocaleString()}</td>
-          <td><a href="${coinLink}" target="_blank" class="coin-link">Dexscreener</a></td>
-        </tr>
-      `;
-    }
-  }
-
-  function paginate(coinsArr, page, perPage) {
-    const start = (page -1) * perPage;
-    return coinsArr.slice(start, start + perPage);
-  }
-
-  function renderPagination(totalCoins, perPage, currentPage){
-    const totalPages = Math.ceil(totalCoins / perPage);
-    pagination.innerHTML = '';
-
-    function createBtn(label, page, disabled = false){
-      const btn = document.createElement('button');
-      btn.textContent = label;
-      btn.disabled = disabled;
-      btn.addEventListener('click', () => {
-        currentPage = page;
-        updateDisplay();
-      });
-      return btn;
-    }
-
-    pagination.appendChild(createBtn('First', 1, currentPage === 1));
-    pagination.appendChild(createBtn('Prev', currentPage - 1, currentPage === 1));
-
-    // show max 5 page buttons
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-
-    if(currentPage <= 3) endPage = Math.min(5, totalPages);
-    if(currentPage >= totalPages - 2) startPage = Math.max(1, totalPages - 4);
-
-    for(let i = startPage; i <= endPage; i++){
-      const btn = createBtn(i, i, i === currentPage);
-      if(i === currentPage) btn.style.fontWeight = 'bold';
-      pagination.appendChild(btn);
-    }
-
-    pagination.appendChild(createBtn('Next', currentPage + 1, currentPage === totalPages));
-    pagination.appendChild(createBtn('Last', totalPages, currentPage === totalPages));
-  }
-
-  function sortCoins(coinsArr, key, order){
-    return coinsArr.slice().sort((a,b) => {
-      let valA = a[key];
-      let valB = b[key];
-
-      // Special cases
-      if(key === 'name' || key === 'symbol'){
-        valA = valA.toLowerCase();
-        valB = valB.toLowerCase();
-      }
-      if(valA === null || valA === undefined) return 1;
-      if(valB === null || valB === undefined) return -1;
-
-      if(valA > valB) return order === 'asc' ? 1 : -1;
-      if(valA < valB) return order === 'asc' ? -1 : 1;
-      return 0;
-    });
-  }
-
-  function updateDisplay(){
-    let displayCoins = coins;
-
-    const searchTerm = searchInput.value.toLowerCase();
-    if(searchTerm){
-      displayCoins = displayCoins.filter(c => 
-        c.name.toLowerCase().includes(searchTerm) || c.symbol.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    displayCoins = sortCoins(displayCoins, currentSort.key, currentSort.order);
-
-    renderPagination(displayCoins.length, coinsPerPage, currentPage);
-    const pageCoins = paginate(displayCoins, currentPage, coinsPerPage);
-    renderTable(pageCoins);
-  }
-
-  document.querySelectorAll('th[data-key]').forEach(th => {
-    th.addEventListener('click', () => {
-      const key = th.dataset.key;
-      if(currentSort.key === key){
-        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-      } else {
-        currentSort.key = key;
-        currentSort.order = 'asc';
-      }
-      currentPage = 1;
-      updateDisplay();
-    });
-  });
-
-  searchInput.addEventListener('input', () => {
-    currentPage = 1;
-    updateDisplay();
-  });
-
-  async function init() {
-    spinner.style.display = 'block';
-    table.style.display = 'none';
-
-    coins = await fetchCoins();
-
-    spinner.style.display = 'none';
-    table.style.display = 'table';
-
-    updateDisplay();
-  }
-
-  init();
-</script>
-
-</body>
-</html>
