@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dexscreener Clone - Live Data & Interactive</title>
+  <title>Dexscreener Clone - Real Menu & Filters</title>
   <style>
     /* Reset & base */
     * {
@@ -267,30 +267,31 @@
       <h2>Dexscreener</h2>
       <div class="section">
         <div class="section-title">Menu</div>
-        <a href="#" class="active" tabindex="0">Watchlist</a>
-        <a href="#" tabindex="0">Alerts</a>
-        <a href="#" tabindex="0">Multicharts</a>
-        <a href="#" tabindex="0">New Pairs</a>
-        <a href="#" tabindex="0">Gainers & Losers</a>
-        <a href="#" tabindex="0">Portfolio</a>
+        <a href="#" class="menu-item active" data-menu="watchlist" tabindex="0">Watchlist</a>
+        <a href="#" class="menu-item" data-menu="alerts" tabindex="0">Alerts</a>
+        <a href="#" class="menu-item" data-menu="multicharts" tabindex="0">Multicharts</a>
+        <a href="#" class="menu-item" data-menu="newpairs" tabindex="0">New Pairs</a>
+        <a href="#" class="menu-item" data-menu="gainers" tabindex="0">Gainers &amp; Losers</a>
+        <a href="#" class="menu-item" data-menu="portfolio" tabindex="0">Portfolio</a>
       </div>
       <div class="section">
         <div class="section-title">Chains</div>
-        <a href="#" tabindex="0">Ethereum</a>
-        <a href="#" tabindex="0">BSC</a>
-        <a href="#" tabindex="0">Polygon</a>
-        <a href="#" tabindex="0">Avalanche</a>
-        <a href="#" tabindex="0">Fantom</a>
-        <a href="#" tabindex="0">Arbitrum</a>
-        <a href="#" tabindex="0">Optimism</a>
-        <a href="#" tabindex="0">Cronos</a>
-        <a href="#" tabindex="0">Moonbeam</a>
+        <a href="#" class="chain-item" data-chain="all" tabindex="0">All</a>
+        <a href="#" class="chain-item" data-chain="ethereum" tabindex="0">Ethereum</a>
+        <a href="#" class="chain-item" data-chain="binance-smart-chain" tabindex="0">BSC</a>
+        <a href="#" class="chain-item" data-chain="polygon-pos" tabindex="0">Polygon</a>
+        <a href="#" class="chain-item" data-chain="avalanche" tabindex="0">Avalanche</a>
+        <a href="#" class="chain-item" data-chain="fantom" tabindex="0">Fantom</a>
+        <a href="#" class="chain-item" data-chain="arbitrum-one" tabindex="0">Arbitrum</a>
+        <a href="#" class="chain-item" data-chain="optimistic-ethereum" tabindex="0">Optimism</a>
+        <a href="#" class="chain-item" data-chain="cronos" tabindex="0">Cronos</a>
+        <a href="#" class="chain-item" data-chain="moonbeam" tabindex="0">Moonbeam</a>
       </div>
     </nav>
     <main class="main-content" role="main" aria-label="Main content area">
-      <header class="header">Trending Tokens</header>
-      <section class="table-wrapper" role="region" aria-live="polite">
-        <table role="table" aria-label="Trending tokens table">
+      <header class="header" id="main-header">Trending Tokens</header>
+      <section class="table-wrapper" role="region" aria-live="polite" id="main-content-area">
+        <table role="table" aria-label="Trending tokens table" id="coin-table" style="width:100%">
           <thead>
             <tr>
               <th scope="col">Token</th>
@@ -309,17 +310,33 @@
       </section>
     </main>
     <aside class="details-panel" role="complementary" aria-label="Token details panel">
-      <p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>
+      <p style="color:#8b949e; font-size:1.25rem;" id="details-placeholder">Select a token to view details</p>
     </aside>
   </div>
 
 <script>
   const tbody = document.getElementById("coin-tbody");
   const detailsPanel = document.querySelector(".details-panel");
+  const mainContentArea = document.getElementById("main-content-area");
+  const mainHeader = document.getElementById("main-header");
+  const detailsPlaceholder = document.getElementById("details-placeholder");
   let coinsData = [];
+  let filteredCoins = [];
   let selectedIndex = null;
   let selectedRow = null;
   const refreshInterval = 30000; // 30 seconds
+  let currentChainFilter = "all";
+  let currentMenu = "watchlist";
+
+  // Chains supported by CoinGecko for filtering demo
+  // Map CoinGecko platform identifiers to chain names
+  // Coin platform info: coin.platforms.ethereum, bsc, etc.
+  function matchesChain(coin, chain) {
+    if(chain === "all") return true;
+    // Check coin.platforms for presence of chain
+    if(!coin.platforms) return false;
+    return Object.keys(coin.platforms).some(k => k.toLowerCase() === chain);
+  }
 
   // Draw sparkline on canvas
   function drawSparkline(canvas, prices) {
@@ -363,10 +380,17 @@
     return (p >= 0 ? "+" : "") + p.toFixed(2) + "%";
   }
 
-  // Render table rows
+  // Render table rows from filteredCoins
   function renderTable() {
     tbody.innerHTML = "";
-    coinsData.forEach((coin, i) => {
+    if(filteredCoins.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem; color:#8b949e;">No coins found for this filter.</td></tr>`;
+      detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>`;
+      selectedIndex = null;
+      selectedRow = null;
+      return;
+    }
+    filteredCoins.forEach((coin, i) => {
       const tr = document.createElement("tr");
       tr.dataset.index = i;
       if (i === selectedIndex) {
@@ -435,7 +459,7 @@
       tdMarketCap.textContent = "$" + formatLargeNum(coin.market_cap);
       tr.appendChild(tdMarketCap);
 
-      // Sparkline 7d
+      // Sparkline
       const tdSparkline = document.createElement("td");
       tdSparkline.className = "sparkline";
       const canvas = document.createElement("canvas");
@@ -443,62 +467,71 @@
       canvas.height = 24;
       tdSparkline.appendChild(canvas);
       tr.appendChild(tdSparkline);
-
       drawSparkline(canvas, coin.sparkline_in_7d.price);
 
       tbody.appendChild(tr);
-
-      // Click handler
-      tr.onclick = () => {
-        if (selectedRow) selectedRow.classList.remove("selected");
-        tr.classList.add("selected");
-        selectedRow = tr;
-        selectedIndex = i;
-        renderDetailsPanel(coin);
-      }
     });
   }
 
+  // Render details panel for selected coin
   function renderDetailsPanel(coin) {
     detailsPanel.innerHTML = "";
-    // Symbol & Name
+    if (!coin) {
+      detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>`;
+      return;
+    }
+    // Symbol big
     const symbol = document.createElement("h1");
     symbol.className = "details-symbol";
     symbol.textContent = coin.symbol.toUpperCase();
+
+    // Name
     const name = document.createElement("p");
     name.className = "details-name";
     name.textContent = coin.name;
 
-    // Price & Change
+    // Price
     const price = document.createElement("p");
     price.className = "details-price";
     price.textContent = "$" + formatPrice(coin.current_price);
+
+    // Change 24h
     const change = document.createElement("p");
     change.className = "details-change " + (coin.price_change_percentage_24h >= 0 ? "positive" : "negative");
     change.textContent = formatPercent(coin.price_change_percentage_24h);
 
-    // Additional info rows
-    function createRow(label, val) {
-      const row = document.createElement("div");
-      row.className = "details-row";
-      row.innerHTML = `<strong>${label}: </strong>${val}`;
-      return row;
-    }
+    // Market cap
+    const marketCapRow = document.createElement("div");
+    marketCapRow.className = "details-row";
+    marketCapRow.textContent = "Market Cap: $" + formatLargeNum(coin.market_cap);
 
-    const marketCapRow = createRow("Market Cap", "$" + formatLargeNum(coin.market_cap));
-    const volumeRow = createRow("24h Volume", "$" + formatLargeNum(coin.total_volume));
-    const high24Row = createRow("24h High", "$" + formatPrice(coin.high_24h));
-    const low24Row = createRow("24h Low", "$" + formatPrice(coin.low_24h));
-    const circulatingSupplyRow = createRow("Circulating Supply", formatLargeNum(coin.circulating_supply));
+    // Volume
+    const volumeRow = document.createElement("div");
+    volumeRow.className = "details-row";
+    volumeRow.textContent = "Volume (24h): $" + formatLargeNum(coin.total_volume);
 
-    // Price chart - canvas sparkline bigger & interactive
+    // High 24h
+    const high24Row = document.createElement("div");
+    high24Row.className = "details-row";
+    high24Row.textContent = "24h High: $" + formatPrice(coin.high_24h);
+
+    // Low 24h
+    const low24Row = document.createElement("div");
+    low24Row.className = "details-row";
+    low24Row.textContent = "24h Low: $" + formatPrice(coin.low_24h);
+
+    // Circulating supply
+    const circulatingSupplyRow = document.createElement("div");
+    circulatingSupplyRow.className = "details-row";
+    circulatingSupplyRow.textContent = "Circulating Supply: " + (coin.circulating_supply ? coin.circulating_supply.toLocaleString() : "-");
+
+    // Chart canvas
     const chartWrapper = document.createElement("div");
     chartWrapper.style.marginTop = "1rem";
-
     const chartCanvas = document.createElement("canvas");
     chartCanvas.width = 350;
-    chartCanvas.height = 100;
-    chartCanvas.style.borderRadius = "5px";
+    chartCanvas.height = 120;
+    chartCanvas.style.borderRadius = "6px";
     chartWrapper.appendChild(chartCanvas);
 
     drawLineChart(chartCanvas, coin.sparkline_in_7d.price);
@@ -515,7 +548,7 @@
     detailsPanel.appendChild(chartWrapper);
   }
 
-  // Draw bigger line chart with axes
+  // Draw bigger line chart with gradient fill and axes
   function drawLineChart(canvas, prices) {
     const ctx = canvas.getContext("2d");
     const w = canvas.width;
@@ -557,7 +590,7 @@
     });
     ctx.stroke();
 
-    // Axes (optional)
+    // Axes lines (optional)
     ctx.strokeStyle = "#30363d";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -570,27 +603,21 @@
   // Fetch coins data from CoinGecko
   async function fetchCoins() {
     try {
-      // top 50 coins by market cap with sparkline
-      const res = await fetch(
-        "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h"
-      );
+      const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h";
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Network error");
       const data = await res.json();
       coinsData = data;
-      renderTable();
+      applyFiltersAndRender();
 
-      // If no selection, select the first coin automatically
-      if (selectedIndex === null && coinsData.length > 0) {
+      // Auto select first coin if none selected
+      if (selectedIndex === null && filteredCoins.length > 0) {
         selectedIndex = 0;
-        const firstRow = tbody.querySelector("tr");
-        if (firstRow) {
-          firstRow.classList.add("selected");
-          selectedRow = firstRow;
-          renderDetailsPanel(coinsData[0]);
-        }
-      } else if (selectedIndex !== null) {
-        // Update details panel with updated data
-        renderDetailsPanel(coinsData[selectedIndex]);
+        updateSelection();
+      } else if (selectedIndex !== null && filteredCoins[selectedIndex]) {
+        renderDetailsPanel(filteredCoins[selectedIndex]);
+      } else {
+        renderDetailsPanel(null);
       }
     } catch (error) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem; color:#f85149;">Failed to load data: ${error.message}</td></tr>`;
@@ -599,10 +626,97 @@
     }
   }
 
+  function applyFiltersAndRender() {
+    // Filter coins by chain
+    filteredCoins = coinsData.filter(coin => {
+      if(currentChainFilter === "all") return true;
+      return matchesChain(coin, currentChainFilter);
+    });
+    renderTable();
+  }
+
+  function updateSelection() {
+    // Remove old selection
+    if (selectedRow) selectedRow.classList.remove("selected");
+    selectedRow = tbody.querySelector(`tr[data-index="${selectedIndex}"]`);
+    if (selectedRow) selectedRow.classList.add("selected");
+    renderDetailsPanel(filteredCoins[selectedIndex]);
+  }
+
+  // Event listeners for table row clicks
+  tbody.addEventListener("click", e => {
+    let tr = e.target.closest("tr");
+    if (!tr) return;
+    const index = parseInt(tr.dataset.index);
+    if (isNaN(index)) return;
+    if(index !== selectedIndex){
+      selectedIndex = index;
+      updateSelection();
+    }
+  });
+
+  // Menu navigation
+  const menuItems = document.querySelectorAll(".menu-item");
+  menuItems.forEach(item => {
+    item.addEventListener("click", e => {
+      e.preventDefault();
+      const menu = item.dataset.menu;
+      if(menu === currentMenu) return;
+      currentMenu = menu;
+      menuItems.forEach(m => m.classList.remove("active"));
+      item.classList.add("active");
+      renderMenuContent(menu);
+    });
+  });
+
+  // Chain filtering
+  const chainItems = document.querySelectorAll(".chain-item");
+  chainItems.forEach(chain => {
+    chain.addEventListener("click", e => {
+      e.preventDefault();
+      const chainId = chain.dataset.chain;
+      if(chainId === currentChainFilter) return;
+      currentChainFilter = chainId;
+      chainItems.forEach(c => c.classList.remove("active"));
+      chain.classList.add("active");
+      applyFiltersAndRender();
+      // reset selection after filtering
+      selectedIndex = null;
+      renderDetailsPanel(null);
+      mainHeader.textContent = `Trending Tokens${chainId !== "all" ? " — " + chain.textContent : ""}`;
+    });
+  });
+
+  // Initialize chain filter "All" active
+  chainItems[0].classList.add("active");
+
+  // Render menu content
+  function renderMenuContent(menu) {
+    detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>`;
+    selectedIndex = null;
+    mainHeader.textContent = {
+      watchlist: "Trending Tokens",
+      alerts: "Alerts",
+      multicharts: "Multicharts",
+      newpairs: "New Pairs",
+      gainers: "Gainers & Losers",
+      portfolio: "Portfolio"
+    }[menu] || "Dexscreener";
+
+    if(menu === "watchlist") {
+      applyFiltersAndRender();
+      mainContentArea.style.display = "block";
+    } else {
+      // For other menus, show placeholder content
+      mainContentArea.style.display = "none";
+      detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem; padding:2rem;">${mainHeader.textContent} content is not implemented yet.</p>`;
+    }
+  }
+
   // Initial load
   fetchCoins();
 
-  // Auto-refresh every 30s
+  // Auto-refresh every 30 seconds
   setInterval(fetchCoins, refreshInterval);
 </script>
 </body>
