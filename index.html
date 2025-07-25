@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VexApi Pro - Futuristic Crypto Tracker + Login</title>
+  <title>VexApi Pro - Enhanced Crypto Tracker + Login</title>
   <style>
     /* Reset & basics */
     * {
@@ -19,7 +19,6 @@
       transition: background-color 0.3s ease, color 0.3s ease;
       user-select: none;
     }
-    /* Dark/Light toggle */
     body.light-mode {
       background: #f0f5ff;
       color: #222d44;
@@ -38,18 +37,12 @@
       cursor: default;
       user-select: text;
     }
-    header p {
-      color: #6fc1ffcc;
-      font-size: 1rem;
-      user-select: none;
-    }
-    /* Top right controls container */
     .top-controls {
       display: flex;
       gap: 15px;
       align-items: center;
+      flex-wrap: wrap;
     }
-    /* Buttons and selects */
     button, select {
       cursor: pointer;
       border: none;
@@ -74,7 +67,6 @@
       cursor: not-allowed;
       box-shadow: none;
     }
-    /* Search bar */
     #search {
       padding: 12px 16px;
       font-size: 1rem;
@@ -96,7 +88,6 @@
         inset 0 0 12px #00ffe7ee,
         0 0 25px #00e2ffbb;
     }
-    /* Table */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -144,7 +135,6 @@
     tr:hover {
       background: #112933dd;
     }
-    /* Price colors */
     .price-up {
       color: #33ff99;
       text-shadow: 0 0 6px #33ff99aa;
@@ -155,7 +145,6 @@
       text-shadow: 0 0 6px #ff3366aa;
       user-select: text;
     }
-    /* Link buttons */
     .coin-link {
       background: #263544cc;
       color: #80e8ffcc;
@@ -177,7 +166,6 @@
       color: #00f4ff;
       box-shadow: 0 0 20px #00fff7dd;
     }
-    /* Pagination */
     .pagination {
       margin-top: 15px;
       text-align: center;
@@ -187,6 +175,62 @@
       margin: 0 5px;
       min-width: 36px;
       font-size: 1.1rem;
+    }
+    #loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #112133;
+      border-top: 5px solid #00ffe7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 30px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    /* Watchlist */
+    .watch-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #444c5c;
+      transition: color 0.3s ease;
+      user-select: none;
+    }
+    .watch-btn.active {
+      color: #00ffe7;
+      text-shadow: 0 0 8px #00ffe7bb;
+    }
+    .watch-btn:hover {
+      color: #00ffe7;
+    }
+    /* Alerts input */
+    #alert-input {
+      width: 80px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: none;
+      background: #112133;
+      color: #6bf3ff;
+      box-shadow:
+        inset 0 0 8px #00ffe7aa,
+        0 0 10px #00e2ff44;
+      transition: box-shadow 0.3s ease;
+      user-select: text;
+      font-size: 0.9rem;
+      margin-left: 5px;
+    }
+    #alert-input:focus {
+      outline: none;
+      box-shadow:
+        inset 0 0 12px #00ffe7ee,
+        0 0 25px #00e2ffbb;
+    }
+    /* Chain filter dropdown */
+    #chain-filter {
+      width: 140px;
     }
     /* Modal */
     #modal {
@@ -241,62 +285,6 @@
       width: 100% !important;
       height: 260px !important;
       user-select: none;
-    }
-    /* Watchlist */
-    .watch-btn {
-      background: transparent;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #444c5c;
-      transition: color 0.3s ease;
-      user-select: none;
-    }
-    .watch-btn.active {
-      color: #00ffe7;
-      text-shadow: 0 0 8px #00ffe7bb;
-    }
-    .watch-btn:hover {
-      color: #00ffe7;
-    }
-    /* Alerts input */
-    #alert-input {
-      width: 100px;
-      margin-left: 10px;
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: none;
-      background: #112133;
-      color: #6bf3ff;
-      box-shadow:
-        inset 0 0 8px #00ffe7aa,
-        0 0 10px #00e2ff44;
-      transition: box-shadow 0.3s ease;
-      user-select: text;
-    }
-    #alert-input:focus {
-      outline: none;
-      box-shadow:
-        inset 0 0 12px #00ffe7ee,
-        0 0 25px #00e2ffbb;
-    }
-    /* Chain filter dropdown */
-    #chain-filter {
-      width: 140px;
-    }
-    /* Loading spinner */
-    #loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid #112133;
-      border-top: 5px solid #00ffe7;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 30px auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg);}
-      100% { transform: rotate(360deg);}
     }
     /* Login/signup UI */
     #auth-container {
@@ -382,7 +370,6 @@
       background: #00ffe7;
       color: #112132;
     }
-    /* Dark mode toggle */
     #dark-toggle-btn {
       background: transparent;
       border: 2px solid #80e8ffcc;
@@ -426,7 +413,7 @@
   <select id="chain-filter" title="Filter by Chain">
     <option value="all">Chain: All</option>
     <option value="ethereum">Ethereum</option>
-    <option value="bsc">Binance Smart Chain</option>
+    <option value="binance-smart-chain">Binance Smart Chain</option>
     <option value="solana">Solana</option>
     <option value="polygon">Polygon</option>
   </select>
@@ -480,10 +467,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Variables & State
+  // === Variables & state ===
   let coins = [];
   let filteredCoins = [];
   let watchlist = JSON.parse(localStorage.getItem('vexapi-watchlist') || '[]');
   let alerts = JSON.parse(localStorage.getItem('vexapi-alerts') || '{}');
   let currentPage = 1;
-  const coinsPerPage =
+  const coinsPerPage = 50;
+  let sortKey = 'market_cap';
+  let sortOrder = 'desc';
+  let trendingOnly = false;
+  let chainFilter = 'all';
+  let isLightMode = false;
+  let authMode = 'login'; // or 'signup'
+
+  const spinner = document.getElementById('loading-spinner');
+  const table = document.getElementBy
