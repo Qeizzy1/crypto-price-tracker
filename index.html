@@ -238,4 +238,78 @@
     table.style.display = 'table';
   }
 
-  
+  function renderPagination() {
+    pagination.innerHTML = '';
+    const totalPages = Math.ceil(filteredCoins.length / coinsPerPage);
+    if(totalPages <= 1) return;
+
+    const createBtn = (text, disabled, onClick) => {
+      const btn = document.createElement('button');
+      btn.textContent = text;
+      btn.disabled = disabled;
+      btn.addEventListener('click', onClick);
+      return btn;
+    };
+
+    pagination.appendChild(createBtn('<<', currentPage === 1, () => { currentPage = 1; renderTable(); renderPagination(); }));
+    pagination.appendChild(createBtn('<', currentPage === 1, () => { currentPage--; renderTable(); renderPagination(); }));
+
+    const pageRange = 3;
+    let startPage = Math.max(1, currentPage - pageRange);
+    let endPage = Math.min(totalPages, currentPage + pageRange);
+
+    if(currentPage <= pageRange) {
+      endPage = Math.min(totalPages, 1 + pageRange * 2);
+    }
+    if(currentPage + pageRange > totalPages) {
+      startPage = Math.max(1, totalPages - pageRange * 2);
+    }
+
+    for(let i = startPage; i <= endPage; i++) {
+      const btn = createBtn(i, false, () => {
+        currentPage = i;
+        renderTable();
+        renderPagination();
+      });
+      if(i === currentPage) {
+        btn.style.background = '#00ffe7';
+        btn.style.color = '#012b3d';
+        btn.style.cursor = 'default';
+      }
+      pagination.appendChild(btn);
+    }
+
+    pagination.appendChild(createBtn('>', currentPage === totalPages, () => { currentPage++; renderTable(); renderPagination(); }));
+    pagination.appendChild(createBtn('>>', currentPage === totalPages, () => { currentPage = totalPages; renderTable(); renderPagination(); }));
+  }
+
+  // Sort by clicking header
+  document.querySelectorAll('th[data-key]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if(currentSort.key === key) {
+        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.key = key;
+        currentSort.order = 'asc';
+      }
+      applyFiltersAndSort();
+    });
+  });
+
+  // Search debounce
+  let searchTimeout = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      applyFiltersAndSort();
+    }, 300);
+  });
+
+  // Initial fetch
+  fetchCoins();
+})();
+</script>
+
+</body>
+</html>
