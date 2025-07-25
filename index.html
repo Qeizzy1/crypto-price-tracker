@@ -1,723 +1,210 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dexscreener Clone - Real Menu & Filters</title>
+  <title>Dexscreener Clone</title>
   <style>
-    /* Reset & base */
-    * {
-      box-sizing: border-box;
-    }
-    body, html {
-      margin: 0; padding: 0;
-      height: 100%;
-      font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0d1117;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0d1117;
       color: #c9d1d9;
-      user-select: none;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
-    #app {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      background-color: #161b22;
-      border-right: 1px solid #21262d;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem 0;
-      user-select:none;
-    }
-    .sidebar h2 {
-      color: #58a6ff;
-      font-weight: 700;
-      margin: 0 1.5rem 1rem 1.5rem;
+
+    header {
+      background: #161b22;
+      padding: 1rem;
+      text-align: center;
       font-size: 1.5rem;
-      letter-spacing: 0.03em;
-    }
-    .sidebar .section {
-      margin-bottom: 1.5rem;
-    }
-    .sidebar .section-title {
-      padding: 0 1.5rem;
-      font-weight: 600;
-      font-size: 0.75rem;
-      color: #8b949e;
-      margin-bottom: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .sidebar a {
-      display: block;
-      padding: 0.5rem 1.5rem;
-      font-size: 1rem;
-      color: #8b949e;
-      text-decoration: none;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    .sidebar a:hover,
-    .sidebar a.active {
-      background-color: #21262d;
       color: #58a6ff;
     }
 
-    /* Main content */
-    .main-content {
-      flex-grow: 1;
-      background-color: #0d1117;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .header {
-      padding: 1rem 2rem;
-      border-bottom: 1px solid #21262d;
-      font-weight: 700;
-      font-size: 1.5rem;
-      color: #58a6ff;
-      user-select:none;
-    }
-    /* Table container with vertical scroll */
-    .table-wrapper {
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: 1rem 2rem;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.9rem;
-      color: #c9d1d9;
-    }
-    thead tr {
-      border-bottom: 1px solid #21262d;
-      color: #8b949e;
-      font-weight: 600;
-      user-select:none;
-    }
-    th, td {
-      padding: 0.65rem 0.75rem;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th.price, td.price,
-    th.change, td.change,
-    th.volume, td.volume,
-    th.liquidity, td.liquidity,
-    th.marketcap, td.marketcap {
-      text-align: right;
-    }
-    tbody tr {
+    #wallet {
+      float: right;
+      margin-right: 1rem;
       cursor: pointer;
-      border-bottom: 1px solid #21262d;
-      transition: background-color 0.2s ease;
+      color: #58a6ff;
     }
-    tbody tr:hover {
-      background-color: #161b22;
+
+    #content {
+      display: flex;
     }
-    tbody tr.selected {
+
+    aside {
+      width: 220px;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      padding: 1rem;
+      height: calc(100vh - 70px);
+    }
+
+    aside h3 {
+      color: #8b949e;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    aside a {
+      display: block;
+      padding: 0.5rem 0;
+      color: #c9d1d9;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    main {
+      flex-grow: 1;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.6rem;
+      text-align: left;
+      border-bottom: 1px solid #30363d;
+    }
+
+    tr:hover {
       background-color: #21262d;
     }
-    /* Change colors */
-    td.change.positive {
-      color: #3fb950;
-      font-weight: 700;
+
+    .green {
+      color: #16c784;
     }
-    td.change.negative {
-      color: #f85149;
-      font-weight: 700;
+
+    .red {
+      color: #ea3943;
     }
-    /* Sparkline canvas */
-    td.sparkline canvas {
-      display: block;
+
+    .spark {
       width: 100px;
-      height: 24px;
-      image-rendering: pixelated;
-      border-radius: 3px;
+      height: 30px;
     }
-    /* Details panel */
-    .details-panel {
-      width: 400px;
-      background-color: #161b22;
-      border-left: 1px solid #21262d;
-      padding: 1.5rem 2rem;
-      overflow-y: auto;
-      user-select:none;
-    }
-    .details-symbol {
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: #58a6ff;
-      margin: 0 0 0.15rem 0;
-    }
-    .details-name {
-      font-weight: 500;
-      font-size: 1.25rem;
+
+    #loader {
+      text-align: center;
+      padding: 2rem;
       color: #8b949e;
-      margin: 0 0 1rem 0;
-    }
-    .details-price {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    .details-change {
-      font-weight: 700;
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-    }
-    .details-change.positive {
-      color: #3fb950;
-    }
-    .details-change.negative {
-      color: #f85149;
-    }
-    .details-row {
-      margin-bottom: 0.75rem;
-      font-size: 0.95rem;
-    }
-    /* Scrollbar styling */
-    .table-wrapper::-webkit-scrollbar,
-    .details-panel::-webkit-scrollbar {
-      width: 8px;
-    }
-    .table-wrapper::-webkit-scrollbar-thumb,
-    .details-panel::-webkit-scrollbar-thumb {
-      background-color: #30363d;
-      border-radius: 4px;
-    }
-    .table-wrapper::-webkit-scrollbar-track,
-    .details-panel::-webkit-scrollbar-track {
-      background-color: #0d1117;
-    }
-    /* Responsive */
-    @media (max-width: 1000px) {
-      #app {
-        flex-direction: column;
-      }
-      .sidebar {
-        width: 100%;
-        height: 60px;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 0 1rem;
-        border-right: none;
-        border-bottom: 1px solid #21262d;
-      }
-      .sidebar h2 {
-        display: none;
-      }
-      .sidebar .section,
-      .sidebar a {
-        flex-shrink: 0;
-        margin-right: 1rem;
-        padding: 1rem 0.5rem;
-      }
-      .main-content {
-        flex-grow: 1;
-        overflow: visible;
-      }
-      .table-wrapper {
-        padding: 0 1rem;
-      }
-      .details-panel {
-        width: 100%;
-        border-left: none;
-        border-top: 1px solid #21262d;
-        padding: 1rem;
-        max-height: 200px;
-        overflow-x: auto;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-around;
-      }
-      .details-symbol {
-        font-size: 2rem;
-        flex-basis: 100%;
-        text-align: center;
-      }
-      .details-name {
-        font-size: 1rem;
-        flex-basis: 100%;
-        text-align: center;
-        margin-bottom: 0.5rem;
-      }
-      .details-price, .details-change {
-        flex-basis: 50%;
-        text-align: center;
-      }
-      .details-row {
-        flex-basis: 50%;
-        text-align: center;
-        margin-bottom: 0.3rem;
-      }
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <nav class="sidebar" aria-label="Sidebar navigation">
-      <h2>Dexscreener</h2>
-      <div class="section">
-        <div class="section-title">Menu</div>
-        <a href="#" class="menu-item active" data-menu="watchlist" tabindex="0">Watchlist</a>
-        <a href="#" class="menu-item" data-menu="alerts" tabindex="0">Alerts</a>
-        <a href="#" class="menu-item" data-menu="multicharts" tabindex="0">Multicharts</a>
-        <a href="#" class="menu-item" data-menu="newpairs" tabindex="0">New Pairs</a>
-        <a href="#" class="menu-item" data-menu="gainers" tabindex="0">Gainers &amp; Losers</a>
-        <a href="#" class="menu-item" data-menu="portfolio" tabindex="0">Portfolio</a>
-      </div>
-      <div class="section">
-        <div class="section-title">Chains</div>
-        <a href="#" class="chain-item" data-chain="all" tabindex="0">All</a>
-        <a href="#" class="chain-item" data-chain="ethereum" tabindex="0">Ethereum</a>
-        <a href="#" class="chain-item" data-chain="binance-smart-chain" tabindex="0">BSC</a>
-        <a href="#" class="chain-item" data-chain="polygon-pos" tabindex="0">Polygon</a>
-        <a href="#" class="chain-item" data-chain="avalanche" tabindex="0">Avalanche</a>
-        <a href="#" class="chain-item" data-chain="fantom" tabindex="0">Fantom</a>
-        <a href="#" class="chain-item" data-chain="arbitrum-one" tabindex="0">Arbitrum</a>
-        <a href="#" class="chain-item" data-chain="optimistic-ethereum" tabindex="0">Optimism</a>
-        <a href="#" class="chain-item" data-chain="cronos" tabindex="0">Cronos</a>
-        <a href="#" class="chain-item" data-chain="moonbeam" tabindex="0">Moonbeam</a>
-      </div>
-    </nav>
-    <main class="main-content" role="main" aria-label="Main content area">
-      <header class="header" id="main-header">Trending Tokens</header>
-      <section class="table-wrapper" role="region" aria-live="polite" id="main-content-area">
-        <table role="table" aria-label="Trending tokens table" id="coin-table" style="width:100%">
-          <thead>
-            <tr>
-              <th scope="col">Token</th>
-              <th scope="col" class="price">Price</th>
-              <th scope="col" class="change">24H %</th>
-              <th scope="col" class="volume">Volume</th>
-              <th scope="col" class="liquidity">Liquidity</th>
-              <th scope="col" class="marketcap">Market Cap</th>
-              <th scope="col" class="sparkline">7d</th>
-            </tr>
-          </thead>
-          <tbody id="coin-tbody">
-            <tr><td colspan="7" style="text-align:center; padding:2rem;">Loading coins...</td></tr>
-          </tbody>
-        </table>
-      </section>
-    </main>
-    <aside class="details-panel" role="complementary" aria-label="Token details panel">
-      <p style="color:#8b949e; font-size:1.25rem;" id="details-placeholder">Select a token to view details</p>
-    </aside>
-  </div>
+
+<header>
+  Dexscreener Clone
+  <span id="wallet">[ Connect Wallet ]</span>
+</header>
+
+<div id="content">
+  <aside>
+    <h3>Menu</h3>
+    <a onclick="filterCoins('all')">All Coins</a>
+    <a onclick="filterCoins('gainers')">Top Gainers</a>
+    <a onclick="filterCoins('losers')">Top Losers</a>
+    <a onclick="filterCoins('watchlist')">Watchlist</a>
+  </aside>
+
+  <main>
+    <div id="loader">Loading coins...</div>
+    <table id="coinTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Coin</th>
+          <th>Price</th>
+          <th>24h Change</th>
+          <th>Market Cap</th>
+        </tr>
+      </thead>
+      <tbody id="coinBody"></tbody>
+    </table>
+  </main>
+</div>
 
 <script>
-  const tbody = document.getElementById("coin-tbody");
-  const detailsPanel = document.querySelector(".details-panel");
-  const mainContentArea = document.getElementById("main-content-area");
-  const mainHeader = document.getElementById("main-header");
-  const detailsPlaceholder = document.getElementById("details-placeholder");
-  let coinsData = [];
-  let filteredCoins = [];
-  let selectedIndex = null;
-  let selectedRow = null;
-  const refreshInterval = 30000; // 30 seconds
-  let currentChainFilter = "all";
-  let currentMenu = "watchlist";
+  let allCoins = [];
 
-  // Chains supported by CoinGecko for filtering demo
-  // Map CoinGecko platform identifiers to chain names
-  // Coin platform info: coin.platforms.ethereum, bsc, etc.
-  function matchesChain(coin, chain) {
-    if(chain === "all") return true;
-    // Check coin.platforms for presence of chain
-    if(!coin.platforms) return false;
-    return Object.keys(coin.platforms).some(k => k.toLowerCase() === chain);
-  }
-
-  // Draw sparkline on canvas
-  function drawSparkline(canvas, prices) {
-    const ctx = canvas.getContext("2d");
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-    if (!prices || prices.length < 2) return;
-
-    const max = Math.max(...prices);
-    const min = Math.min(...prices);
-    const range = max - min || 1;
-
-    ctx.strokeStyle = "#58a6ff";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    prices.forEach((p, i) => {
-      const x = (i / (prices.length - 1)) * w;
-      const y = h - ((p - min) / range) * h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-  }
-
-  function formatPrice(p) {
-    if (p === null || p === undefined) return "-";
-    if (p >= 1) return p.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6});
-    else return p.toPrecision(4);
-  }
-  function formatLargeNum(n) {
-    if (n === null || n === undefined) return "-";
-    if (n >= 1e12) return (n/1e12).toFixed(2) + "T";
-    if (n >= 1e9) return (n/1e9).toFixed(2) + "B";
-    if (n >= 1e6) return (n/1e6).toFixed(2) + "M";
-    if (n >= 1e3) return (n/1e3).toFixed(2) + "K";
-    return n.toFixed(2);
-  }
-  function formatPercent(p) {
-    if (p === null || p === undefined) return "-";
-    return (p >= 0 ? "+" : "") + p.toFixed(2) + "%";
-  }
-
-  // Render table rows from filteredCoins
-  function renderTable() {
-    tbody.innerHTML = "";
-    if(filteredCoins.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem; color:#8b949e;">No coins found for this filter.</td></tr>`;
-      detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>`;
-      selectedIndex = null;
-      selectedRow = null;
-      return;
+  async function fetchAllCoins() {
+    let page = 1;
+    let all = [];
+    while (true) {
+      const res = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`);
+      const coins = await res.json();
+      if (!coins.length) break;
+      all.push(...coins);
+      page++;
     }
-    filteredCoins.forEach((coin, i) => {
-      const tr = document.createElement("tr");
-      tr.dataset.index = i;
-      if (i === selectedIndex) {
-        tr.classList.add("selected");
-      }
-      // Token cell with icon + name + symbol
-      const tdToken = document.createElement("td");
-      tdToken.style.display = "flex";
-      tdToken.style.alignItems = "center";
-      tdToken.style.gap = "0.6rem";
+    return all;
+  }
 
-      const img = document.createElement("img");
-      img.src = coin.image;
-      img.alt = coin.symbol.toUpperCase();
-      img.width = 24;
-      img.height = 24;
-      img.style.borderRadius = "50%";
-
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = coin.name;
-
-      const symbolSpan = document.createElement("span");
-      symbolSpan.textContent = coin.symbol.toUpperCase();
-      symbolSpan.style.color = "#8b949e";
-      symbolSpan.style.fontSize = "0.85rem";
-
-      const nameWrapper = document.createElement("div");
-      nameWrapper.style.display = "flex";
-      nameWrapper.style.flexDirection = "column";
-      nameWrapper.appendChild(nameSpan);
-      nameWrapper.appendChild(symbolSpan);
-
-      tdToken.appendChild(img);
-      tdToken.appendChild(nameWrapper);
-
-      tr.appendChild(tdToken);
-
-      // Price
-      const tdPrice = document.createElement("td");
-      tdPrice.className = "price";
-      tdPrice.textContent = "$" + formatPrice(coin.current_price);
-      tr.appendChild(tdPrice);
-
-      // 24h Change
-      const tdChange = document.createElement("td");
-      tdChange.className = "change";
-      tdChange.textContent = formatPercent(coin.price_change_percentage_24h);
-      tdChange.classList.add(coin.price_change_percentage_24h >= 0 ? "positive" : "negative");
-      tr.appendChild(tdChange);
-
-      // Volume
-      const tdVolume = document.createElement("td");
-      tdVolume.className = "volume";
-      tdVolume.textContent = "$" + formatLargeNum(coin.total_volume);
-      tr.appendChild(tdVolume);
-
-      // Liquidity - using market_cap as proxy
-      const tdLiquidity = document.createElement("td");
-      tdLiquidity.className = "liquidity";
-      tdLiquidity.textContent = "$" + formatLargeNum(coin.market_cap);
-      tr.appendChild(tdLiquidity);
-
-      // Market Cap
-      const tdMarketCap = document.createElement("td");
-      tdMarketCap.className = "marketcap";
-      tdMarketCap.textContent = "$" + formatLargeNum(coin.market_cap);
-      tr.appendChild(tdMarketCap);
-
-      // Sparkline
-      const tdSparkline = document.createElement("td");
-      tdSparkline.className = "sparkline";
-      const canvas = document.createElement("canvas");
-      canvas.width = 100;
-      canvas.height = 24;
-      tdSparkline.appendChild(canvas);
-      tr.appendChild(tdSparkline);
-      drawSparkline(canvas, coin.sparkline_in_7d.price);
-
+  function updateCoinTable(coins) {
+    const tbody = document.getElementById('coinBody');
+    tbody.innerHTML = '';
+    coins.forEach(coin => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><img src="${coin.image}" width="18"> ${coin.name} (${coin.symbol.toUpperCase()})</td>
+        <td>$${coin.current_price.toFixed(4)}</td>
+        <td class="${coin.price_change_percentage_24h >= 0 ? 'green' : 'red'}">
+          ${coin.price_change_percentage_24h?.toFixed(2)}%
+        </td>
+        <td>$${(coin.market_cap / 1e6).toFixed(2)}M</td>
+      `;
       tbody.appendChild(tr);
     });
   }
 
-  // Render details panel for selected coin
-  function renderDetailsPanel(coin) {
-    detailsPanel.innerHTML = "";
-    if (!coin) {
-      detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>`;
-      return;
+  function filterCoins(type) {
+    if (type === 'all') updateCoinTable(allCoins);
+    else if (type === 'gainers') {
+      const sorted = [...allCoins].sort((a,b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
+      updateCoinTable(sorted.slice(0, 50));
     }
-    // Symbol big
-    const symbol = document.createElement("h1");
-    symbol.className = "details-symbol";
-    symbol.textContent = coin.symbol.toUpperCase();
-
-    // Name
-    const name = document.createElement("p");
-    name.className = "details-name";
-    name.textContent = coin.name;
-
-    // Price
-    const price = document.createElement("p");
-    price.className = "details-price";
-    price.textContent = "$" + formatPrice(coin.current_price);
-
-    // Change 24h
-    const change = document.createElement("p");
-    change.className = "details-change " + (coin.price_change_percentage_24h >= 0 ? "positive" : "negative");
-    change.textContent = formatPercent(coin.price_change_percentage_24h);
-
-    // Market cap
-    const marketCapRow = document.createElement("div");
-    marketCapRow.className = "details-row";
-    marketCapRow.textContent = "Market Cap: $" + formatLargeNum(coin.market_cap);
-
-    // Volume
-    const volumeRow = document.createElement("div");
-    volumeRow.className = "details-row";
-    volumeRow.textContent = "Volume (24h): $" + formatLargeNum(coin.total_volume);
-
-    // High 24h
-    const high24Row = document.createElement("div");
-    high24Row.className = "details-row";
-    high24Row.textContent = "24h High: $" + formatPrice(coin.high_24h);
-
-    // Low 24h
-    const low24Row = document.createElement("div");
-    low24Row.className = "details-row";
-    low24Row.textContent = "24h Low: $" + formatPrice(coin.low_24h);
-
-    // Circulating supply
-    const circulatingSupplyRow = document.createElement("div");
-    circulatingSupplyRow.className = "details-row";
-    circulatingSupplyRow.textContent = "Circulating Supply: " + (coin.circulating_supply ? coin.circulating_supply.toLocaleString() : "-");
-
-    // Chart canvas
-    const chartWrapper = document.createElement("div");
-    chartWrapper.style.marginTop = "1rem";
-    const chartCanvas = document.createElement("canvas");
-    chartCanvas.width = 350;
-    chartCanvas.height = 120;
-    chartCanvas.style.borderRadius = "6px";
-    chartWrapper.appendChild(chartCanvas);
-
-    drawLineChart(chartCanvas, coin.sparkline_in_7d.price);
-
-    detailsPanel.appendChild(symbol);
-    detailsPanel.appendChild(name);
-    detailsPanel.appendChild(price);
-    detailsPanel.appendChild(change);
-    detailsPanel.appendChild(marketCapRow);
-    detailsPanel.appendChild(volumeRow);
-    detailsPanel.appendChild(high24Row);
-    detailsPanel.appendChild(low24Row);
-    detailsPanel.appendChild(circulatingSupplyRow);
-    detailsPanel.appendChild(chartWrapper);
+    else if (type === 'losers') {
+      const sorted = [...allCoins].sort((a,b) => a.price_change_percentage_24h - b.price_change_percentage_24h);
+      updateCoinTable(sorted.slice(0, 50));
+    }
+    else if (type === 'watchlist') {
+      const wl = JSON.parse(localStorage.getItem('watchlist') || '[]');
+      const filtered = allCoins.filter(c => wl.includes(c.id));
+      updateCoinTable(filtered);
+    }
   }
 
-  // Draw bigger line chart with gradient fill and axes
-  function drawLineChart(canvas, prices) {
-    const ctx = canvas.getContext("2d");
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-    if (!prices || prices.length < 2) return;
-
-    const max = Math.max(...prices);
-    const min = Math.min(...prices);
-    const range = max - min || 1;
-
-    // Background gradient fill
-    const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, "rgba(88, 166, 255, 0.3)");
-    gradient.addColorStop(1, "rgba(88, 166, 255, 0)");
-
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    prices.forEach((p, i) => {
-      const x = (i / (prices.length - 1)) * w;
-      const y = h - ((p - min) / range) * h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.lineTo(w, h);
-    ctx.lineTo(0, h);
-    ctx.closePath();
-    ctx.fill();
-
-    // Stroke line
-    ctx.strokeStyle = "#58a6ff";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    prices.forEach((p, i) => {
-      const x = (i / (prices.length - 1)) * w;
-      const y = h - ((p - min) / range) * h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Axes lines (optional)
-    ctx.strokeStyle = "#30363d";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, h);
-    ctx.lineTo(w, h);
-    ctx.stroke();
+  async function loadCoins() {
+    allCoins = await fetchAllCoins();
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('coinTable').style.display = '';
+    updateCoinTable(allCoins);
+    setInterval(refreshPrices, 1000);
   }
 
-  // Fetch coins data from CoinGecko
-  async function fetchCoins() {
-    try {
-      const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h";
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Network error");
-      const data = await res.json();
-      coinsData = data;
-      applyFiltersAndRender();
-
-      // Auto select first coin if none selected
-      if (selectedIndex === null && filteredCoins.length > 0) {
-        selectedIndex = 0;
-        updateSelection();
-      } else if (selectedIndex !== null && filteredCoins[selectedIndex]) {
-        renderDetailsPanel(filteredCoins[selectedIndex]);
-      } else {
-        renderDetailsPanel(null);
+  async function refreshPrices() {
+    const ids = allCoins.map(c => c.id).join(',');
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`;
+    const res = await fetch(url);
+    const prices = await res.json();
+    allCoins.forEach(coin => {
+      if (prices[coin.id]) {
+        coin.current_price = prices[coin.id].usd;
+        coin.price_change_percentage_24h = prices[coin.id].usd_24h_change;
       }
-    } catch (error) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem; color:#f85149;">Failed to load data: ${error.message}</td></tr>`;
-      detailsPanel.innerHTML = `<p style="color:#f85149;">Failed to load details.</p>`;
-      console.error("Fetch coins error:", error);
-    }
-  }
-
-  function applyFiltersAndRender() {
-    // Filter coins by chain
-    filteredCoins = coinsData.filter(coin => {
-      if(currentChainFilter === "all") return true;
-      return matchesChain(coin, currentChainFilter);
     });
-    renderTable();
+    updateCoinTable(allCoins);
   }
 
-  function updateSelection() {
-    // Remove old selection
-    if (selectedRow) selectedRow.classList.remove("selected");
-    selectedRow = tbody.querySelector(`tr[data-index="${selectedIndex}"]`);
-    if (selectedRow) selectedRow.classList.add("selected");
-    renderDetailsPanel(filteredCoins[selectedIndex]);
-  }
+  document.getElementById("wallet").onclick = () => {
+    alert("Wallet connected (simulated).");
+    document.getElementById("wallet").innerText = "[ Wallet: 7h...9Xp ]";
+  };
 
-  // Event listeners for table row clicks
-  tbody.addEventListener("click", e => {
-    let tr = e.target.closest("tr");
-    if (!tr) return;
-    const index = parseInt(tr.dataset.index);
-    if (isNaN(index)) return;
-    if(index !== selectedIndex){
-      selectedIndex = index;
-      updateSelection();
-    }
-  });
-
-  // Menu navigation
-  const menuItems = document.querySelectorAll(".menu-item");
-  menuItems.forEach(item => {
-    item.addEventListener("click", e => {
-      e.preventDefault();
-      const menu = item.dataset.menu;
-      if(menu === currentMenu) return;
-      currentMenu = menu;
-      menuItems.forEach(m => m.classList.remove("active"));
-      item.classList.add("active");
-      renderMenuContent(menu);
-    });
-  });
-
-  // Chain filtering
-  const chainItems = document.querySelectorAll(".chain-item");
-  chainItems.forEach(chain => {
-    chain.addEventListener("click", e => {
-      e.preventDefault();
-      const chainId = chain.dataset.chain;
-      if(chainId === currentChainFilter) return;
-      currentChainFilter = chainId;
-      chainItems.forEach(c => c.classList.remove("active"));
-      chain.classList.add("active");
-      applyFiltersAndRender();
-      // reset selection after filtering
-      selectedIndex = null;
-      renderDetailsPanel(null);
-      mainHeader.textContent = `Trending Tokens${chainId !== "all" ? " — " + chain.textContent : ""}`;
-    });
-  });
-
-  // Initialize chain filter "All" active
-  chainItems[0].classList.add("active");
-
-  // Render menu content
-  function renderMenuContent(menu) {
-    detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>`;
-    selectedIndex = null;
-    mainHeader.textContent = {
-      watchlist: "Trending Tokens",
-      alerts: "Alerts",
-      multicharts: "Multicharts",
-      newpairs: "New Pairs",
-      gainers: "Gainers & Losers",
-      portfolio: "Portfolio"
-    }[menu] || "Dexscreener";
-
-    if(menu === "watchlist") {
-      applyFiltersAndRender();
-      mainContentArea.style.display = "block";
-    } else {
-      // For other menus, show placeholder content
-      mainContentArea.style.display = "none";
-      detailsPanel.innerHTML = `<p style="color:#8b949e; font-size:1.25rem; padding:2rem;">${mainHeader.textContent} content is not implemented yet.</p>`;
-    }
-  }
-
-  // Initial load
-  fetchCoins();
-
-  // Auto-refresh every 30 seconds
-  setInterval(fetchCoins, refreshInterval);
+  loadCoins();
 </script>
+
 </body>
 </html>
