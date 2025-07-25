@@ -1,565 +1,113 @@
-/**
- * VexApi Solana Buy/Sell App (All-in-One)
- *
- * Instructions:
- * 1. Save this file as vexapi-solana.js
- * 2. Run:
- *      npm init -y
- *      npm install express cors body-parser bcryptjs jsonwebtoken node-fetch
- * 3. Run the app:
- *      node vexapi-solana.js
- * 4. Open http://localhost:3000 in Chrome/Edge with Phantom Wallet installed
- * 5. Set Phantom Wallet network to Devnet
- * 6. Signup or login
- * 7. Connect your Phantom wallet
- * 8. View live coin data and buy/sell SOL tokens (simulated buy/sell by sending SOL)
- * 9. Portfolio updates automatically after transactions
- *
- * Notes:
- * - This demo only sends SOL tokens to/from a dummy exchange wallet to simulate buy/sell.
- * - Real DEX swap integration (Serum, Raydium) is complex and not included here.
- * - The backend stores user auth and portfolio in memory (restart clears data).
- * - Use this for learning/demo purposes.
- */
+import React, { useState, useEffect } from "react";
 
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const fetch = require("node-fetch");
-
-const app = express();
-const PORT = 3000;
-const JWT_SECRET = "super_secret_change_this";
-
-app.use(cors());
-app.use(bodyParser.json());
-
-// In-memory user storage (username -> { passwordHash, portfolio })
-const users = {};
-
-// Middleware to check JWT auth token
-function authMiddleware(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth) return res.status(401).json({ error: "Unauthorized" });
-  const token = auth.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded.username;
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
+const generateFakeCoins = (num) => {
+  const coins = [];
+  for (let i = 1; i <= num; i++) {
+    coins.push({
+      id: i,
+      symbol: `COIN${i}`,
+      name: `Coin ${i}`,
+      price: (Math.random() * 100).toFixed(2),
+      changePercent: (Math.random() * 20 - 10).toFixed(2), // -10% to +10%
+      expectedUpPercent: (Math.random() * 15).toFixed(2), // 0% to +15%
+    });
   }
+  return coins;
+};
+
+export default function DexScreenerUI() {
+  const [coins, setCoins] = useState([]);
+  const [selectedCoin, setSelectedCoin] = useState(null);
+
+  useEffect(() => {
+    const fakeCoins = generateFakeCoins(100);
+    setCoins(fakeCoins);
+  }, []);
+
+  return (
+    <div style={{ fontFamily: "Arial, sans-serif", maxWidth: 900, margin: "auto", padding: 20 }}>
+      <h1 style={{ textAlign: "center" }}>Dexscreener - Coin List</h1>
+
+      <div style={{ display: "flex", gap: 20 }}>
+        {/* Coin List */}
+        <div
+          style={{
+            flex: 1,
+            maxHeight: "70vh",
+            overflowY: "scroll",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+          }}
+        >
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead style={{ backgroundColor: "#f4f4f4" }}>
+              <tr>
+                <th style={{ padding: 8, borderBottom: "1px solid #ccc" }}>Symbol</th>
+                <th style={{ padding: 8, borderBottom: "1px solid #ccc" }}>Price</th>
+                <th style={{ padding: 8, borderBottom: "1px solid #ccc" }}>Change %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {coins.map((coin) => (
+                <tr
+                  key={coin.id}
+                  style={{
+                    cursor: "pointer",
+                    backgroundColor: selectedCoin?.id === coin.id ? "#def" : "transparent",
+                  }}
+                  onClick={() => setSelectedCoin(coin)}
+                >
+                  <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{coin.symbol}</td>
+                  <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>${coin.price}</td>
+                  <td
+                    style={{
+                      padding: 8,
+                      borderBottom: "1px solid #eee",
+                      color: coin.changePercent >= 0 ? "green" : "red",
+                    }}
+                  >
+                    {coin.changePercent}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Coin Details */}
+        <div
+          style={{
+            flex: 1,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            padding: 20,
+            minHeight: "70vh",
+          }}
+        >
+          {selectedCoin ? (
+            <>
+              <h2>
+                {selectedCoin.name} ({selectedCoin.symbol})
+              </h2>
+              <p>
+                <strong>Current Price:</strong> ${selectedCoin.price}
+              </p>
+              <p>
+                <strong>Gone up:</strong>{" "}
+                <span style={{ color: selectedCoin.changePercent >= 0 ? "green" : "red" }}>
+                  {selectedCoin.changePercent}%
+                </span>
+              </p>
+              <p>
+                <strong>Expected to go up:</strong>{" "}
+                <span style={{ color: "blue" }}>{selectedCoin.expectedUpPercent}%</span>
+              </p>
+            </>
+          ) : (
+            <p style={{ color: "#555" }}>Click a coin to see details</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
-
-// Signup endpoint
-app.post("/api/signup", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: "Missing username or password" });
-  if (users[username]) return res.status(400).json({ error: "User exists" });
-  const hash = await bcrypt.hash(password, 10);
-  users[username] = { passwordHash: hash, portfolio: {} };
-  res.json({ message: "User created" });
-});
-
-// Login endpoint
-app.post("/api/login", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: "Missing username or password" });
-  const user = users[username];
-  if (!user) return res.status(400).json({ error: "Invalid username or password" });
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(400).json({ error: "Invalid username or password" });
-  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "6h" });
-  res.json({ token });
-});
-
-// Get user portfolio
-app.get("/api/portfolio", authMiddleware, (req, res) => {
-  const user = users[req.user];
-  res.json(user.portfolio);
-});
-
-// Update portfolio after buy/sell tx
-app.post("/api/portfolio/update", authMiddleware, (req, res) => {
-  const { coin, quantity, action, txSignature } = req.body;
-  if (!coin || !quantity || quantity <= 0 || !["buy", "sell"].includes(action)) {
-    return res.status(400).json({ error: "Invalid data" });
-  }
-  const user = users[req.user];
-  if (action === "buy") {
-    user.portfolio[coin] = (user.portfolio[coin] || 0) + quantity;
-  } else if (action === "sell") {
-    if (!user.portfolio[coin] || user.portfolio[coin] < quantity) {
-      return res.status(400).json({ error: "Insufficient balance" });
-    }
-    user.portfolio[coin] -= quantity;
-    if (user.portfolio[coin] <= 0) delete user.portfolio[coin];
-  }
-  console.log(`User ${req.user} ${action} ${quantity} ${coin} tx: ${txSignature}`);
-  res.json({ message: "Portfolio updated", portfolio: user.portfolio });
-});
-
-// Get coin list from CoinGecko
-app.get("/api/coins", async (req, res) => {
-  try {
-    const resp = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false");
-    const data = await resp.json();
-    res.json(data);
-  } catch {
-    res.status(500).json({ error: "Failed to fetch coins" });
-  }
-});
-
-// Serve frontend
-app.get("/", (req, res) => {
-  res.send(frontendHTML);
-});
-
-app.listen(PORT, () => {
-  console.log(`VexApi Solana app running on http://localhost:${PORT}`);
-});
-
-const frontendHTML = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VexApi Solana Buy/Sell</title>
-<style>
-  body {
-    margin:0; padding:0; background:#0b1120; color:#c8d4e8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select:none;
-  }
-  header {
-    background: #111828; padding: 15px 30px; display:flex; justify-content: space-between; align-items:center; border-bottom: 2px solid #2e3a59;
-  }
-  header h1 { margin: 0; font-size: 28px; color: #64d2ff; }
-  #authButtons button {
-    margin-left: 10px; background: #475569; border: none; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600; cursor: pointer; transition: background-color 0.3s ease;
-  }
-  #authButtons button:hover { background: #2e3a59; }
-  #walletAddress { margin-left: 15px; color: #00ffa6; font-family: monospace; font-weight: 700; }
-  #searchBar {
-    margin: 15px auto; display: block; width: 90%; max-width: 600px; padding: 12px; font-size: 16px; border-radius: 6px; border: none; background: #222e48; color: #c8d4e8;
-  }
-  table {
-    width: 90%; margin: 0 auto 40px auto; border-collapse: collapse; background: #161f3d; border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px #204080;
-  }
-  th, td {
-    padding: 14px 20px; text-align: center;
-  }
-  th {
-    background: #2e3a59; color: #a8ccff; font-weight: 700; cursor: pointer; user-select: none;
-  }
-  tr:nth-child(even) { background: #1e2a4b; }
-  tr:hover { background: #304f8e; }
-  .price-up { color: #00ffa6; font-weight: 700; }
-  .price-down { color: #ff4b4b; font-weight: 700; }
-  .btn-buy, .btn-sell {
-    border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; color: white;
-  }
-  .btn-buy { background: #00c853; margin-right: 5px; }
-  .btn-buy:hover { background: #009624; }
-  .btn-sell { background: #f44336; }
-  .btn-sell:hover { background: #b71c1c; }
-  #portfolioSection {
-    width: 90%; max-width: 900px; margin: 0 auto 60px auto; background: #16234a; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px #204080;
-  }
-  #portfolioSection h2 {
-    margin-top: 0; margin-bottom: 20px; color: #64d2ff; font-weight: 700; user-select: none;
-  }
-  #portfolioTable {
-    width: 100%; border-collapse: collapse;
-  }
-  #portfolioTable th, #portfolioTable td {
-    padding: 12px; border-bottom: 1px solid #204080;
-  }
-  #loginModal {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #222e48; padding: 30px; border-radius: 16px; box-shadow: 0 0 40px #00aaffaa; z-index: 9999;
-    width: 320px; display: none;
-  }
-  #loginModal h2 {
-    margin-top: 0; margin-bottom: 25px; color: #64d2ff; text-align: center;
-  }
-  #loginModal input {
-    width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; font-size: 16px;
-  }
-  #loginModal button {
-    width: 100%; padding: 14px; font-weight: 700; font-size: 16px;
-    background: #00c6ff; color: #0a1f44; border: none; border-radius: 10px; cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  #loginModal button:hover { background: #0099cc; }
-  #loginModal .toggleLogin {
-    margin-top: 15px; color: #99cfff; text-align: center; cursor: pointer; font-weight: 600;
-  }
-  #statusMessage {
-    text-align: center; margin-bottom: 10px; font-weight: 700; height: 22px; color: #00ffa6; user-select: none;
-  }
-</style>
-</head>
-<body>
-<header>
-  <h1>VexApi Solana Buy/Sell</h1>
-  <div id="authButtons">
-    <button id="loginBtn">Login / Signup</button>
-    <button id="logoutBtn" style="display:none;">Logout</button>
-    <button id="connectWalletBtn">Connect Wallet</button>
-    <span id="walletAddress"></span>
-  </div>
-</header>
-
-<input type="text" id="searchBar" placeholder="Search coins..." />
-
-<table id="coinsTable" aria-label="Cryptocurrency Prices">
-  <thead>
-    <tr>
-      <th data-sort="name">Name</th>
-      <th data-sort="symbol">Symbol</th>
-      <th data-sort="current_price">Price (USD)</th>
-      <th data-sort="price_change_percentage_24h">24h Change</th>
-      <th>Buy / Sell</th>
-    </tr>
-  </thead>
-  <tbody id="coinsBody">
-    <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
-  </tbody>
-</table>
-
-<section id="portfolioSection" style="display:none;">
-  <h2>Your Portfolio</h2>
-  <table id="portfolioTable" aria-live="polite">
-    <thead>
-      <tr><th>Coin</th><th>Quantity</th></tr>
-    </thead>
-    <tbody id="portfolioBody">
-      <tr><td colspan="2" style="text-align:center;">No holdings yet.</td></tr>
-    </tbody>
-  </table>
-</section>
-
-<div id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
-  <h2 id="loginModalTitle">Login</h2>
-  <input id="usernameInput" type="text" placeholder="Username" autocomplete="username" aria-label="Username" />
-  <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password" />
-  <button id="submitLoginBtn">Submit</button>
-  <div id="toggleLoginText" class="toggleLogin" tabindex="0" role="button" aria-pressed="false">Don't have an account? Signup</div>
-  <div id="statusMessage" role="alert"></div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.52.0/lib/index.iife.min.js"></script>
-<script>
-(() => {
-  const API = {
-    signup: '/api/signup',
-    login: '/api/login',
-    coins: '/api/coins',
-    portfolio: '/api/portfolio',
-    portfolioUpdate: '/api/portfolio/update',
-  };
-  let coins = [];
-  let filteredCoins = [];
-  let token = localStorage.getItem("vexapi_token") || null;
-  let walletPublicKey = null;
-  let loginMode = "login";
-
-  const loginModal = document.getElementById("loginModal");
-  const loginModalTitle = document.getElementById("loginModalTitle");
-  const usernameInput = document.getElementById("usernameInput");
-  const passwordInput = document.getElementById("passwordInput");
-  const submitLoginBtn = document.getElementById("submitLoginBtn");
-  const toggleLoginText = document.getElementById("toggleLoginText");
-  const statusMessage = document.getElementById("statusMessage");
-  const loginBtn = document.getElementById("loginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const connectWalletBtn = document.getElementById("connectWalletBtn");
-  const walletAddressSpan = document.getElementById("walletAddress");
-  const searchBar = document.getElementById("searchBar");
-  const coinsBody = document.getElementById("coinsBody");
-  const portfolioSection = document.getElementById("portfolioSection");
-  const portfolioBody = document.getElementById("portfolioBody");
-
-  // Dummy exchange wallet pubkey on devnet for simulated buy/sell
-  const EXCHANGE_WALLET = "9J4zVjv7ZgE3Z67nd1dtGrBoZZxQ1aZAD9Ko7p4YZX14";
-
-  function showStatus(msg, error=false) {
-    statusMessage.textContent = msg;
-    statusMessage.style.color = error ? '#ff6b6b' : '#00ffa6';
-  }
-  function clearStatus() {
-    statusMessage.textContent = "";
-  }
-
-  // Show login modal
-  function showLoginModal() { loginModal.style.display = "block"; }
-  function hideLoginModal() { loginModal.style.display = "none"; clearStatus(); usernameInput.value=""; passwordInput.value=""; }
-
-  toggleLoginText.onclick = () => {
-    if(loginMode==="login"){
-      loginMode = "signup";
-      loginModalTitle.textContent = "Sign Up";
-      submitLoginBtn.textContent = "Sign Up";
-      toggleLoginText.textContent = "Already have an account? Login";
-    } else {
-      loginMode = "login";
-      loginModalTitle.textContent = "Login";
-      submitLoginBtn.textContent = "Submit";
-      toggleLoginText.textContent = "Don't have an account? Signup";
-    }
-  };
-
-  submitLoginBtn.onclick = async () => {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-    if(!username || !password){
-      showStatus("Please fill username and password", true);
-      return;
-    }
-    showStatus(loginMode === "login" ? "Logging in..." : "Signing up...");
-    try {
-      const res = await fetch(API[loginMode], {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({username, password}),
-      });
-      const data = await res.json();
-      if(!res.ok){
-        showStatus(data.error || "Failed", true);
-        return;
-      }
-      if(loginMode==="signup"){
-        showStatus("Signup successful, please login");
-        loginMode = "login";
-        loginModalTitle.textContent = "Login";
-        submitLoginBtn.textContent = "Submit";
-        toggleLoginText.textContent = "Don't have an account? Signup";
-      } else {
-        token = data.token;
-        localStorage.setItem("vexapi_token", token);
-        hideLoginModal();
-        await refreshUI();
-      }
-    } catch {
-      showStatus("Network error", true);
-    }
-  };
-
-  loginBtn.onclick = () => showLoginModal();
-  logoutBtn.onclick = () => {
-    token = null;
-    walletPublicKey = null;
-    localStorage.removeItem("vexapi_token");
-    walletAddressSpan.textContent = "";
-    logoutBtn.style.display = "none";
-    loginBtn.style.display = "inline-block";
-    portfolioSection.style.display = "none";
-    alert("Logged out");
-  };
-
-  // Connect Phantom Wallet
-  async function connectWallet(){
-    if(window.solana && window.solana.isPhantom){
-      try {
-        const resp = await window.solana.connect();
-        walletPublicKey = resp.publicKey.toString();
-        walletAddressSpan.textContent = walletPublicKey.slice(0,4) + "..." + walletPublicKey.slice(-4);
-        alert("Wallet connected: " + walletPublicKey);
-      } catch {
-        alert("Wallet connection failed");
-      }
-    } else {
-      alert("Phantom wallet not found");
-    }
-  }
-  connectWalletBtn.onclick = connectWallet;
-
-  // Fetch coins from backend and display
-  async function fetchCoins(){
-    try {
-      const res = await fetch(API.coins);
-      coins = await res.json();
-      filteredCoins = coins;
-      renderCoins();
-    } catch {
-      coinsBody.innerHTML = '<tr><td colspan="5" style="color:#ff6b6b;">Failed to load coins</td></tr>';
-    }
-  }
-
-  // Render coins table rows
-  function renderCoins(){
-    if(filteredCoins.length === 0){
-      coinsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No coins found</td></tr>';
-      return;
-    }
-    coinsBody.innerHTML = filteredCoins.map(c => {
-      const priceChange = c.price_change_percentage_24h;
-      const priceClass = priceChange >= 0 ? "price-up" : "price-down";
-      const dexLink = \`https://dexscreener.com/solana/\${c.id}\`;
-      return \`
-        <tr>
-          <td>\${c.name}</td>
-          <td>\${c.symbol.toUpperCase()}</td>
-          <td>$\${c.current_price.toFixed(4)}</td>
-          <td class="\${priceClass}">\${priceChange ? priceChange.toFixed(2) + "%" : "N/A"}</td>
-          <td>
-            <button class="btn-buy" data-coin="\${c.symbol}" data-price="\${c.current_price}">Buy</button>
-            <button class="btn-sell" data-coin="\${c.symbol}" data-price="\${c.current_price}">Sell</button>
-            <a href="\${dexLink}" target="_blank" style="margin-left:8px; color:#64d2ff; font-weight:700; text-decoration:none;">DEX</a>
-          </td>
-        </tr>
-      \`;
-    }).join("");
-    // Add event listeners to buy/sell buttons
-    document.querySelectorAll(".btn-buy").forEach(btn => btn.onclick = () => buySellAction(btn.dataset.coin, btn.dataset.price, "buy"));
-    document.querySelectorAll(".btn-sell").forEach(btn => btn.onclick = () => buySellAction(btn.dataset.coin, btn.dataset.price, "sell"));
-  }
-
-  // Filter coins by search
-  searchBar.oninput = () => {
-    const q = searchBar.value.toLowerCase();
-    filteredCoins = coins.filter(c => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q));
-    renderCoins();
-  };
-
-  // Fetch portfolio and show
-  async function fetchPortfolio(){
-    if(!token) return;
-    try {
-      const res = await fetch(API.portfolio, {
-        headers: { Authorization: "Bearer " + token }
-      });
-      if(!res.ok) throw new Error("Auth failed");
-      const portfolio = await res.json();
-      renderPortfolio(portfolio);
-      portfolioSection.style.display = "block";
-    } catch {
-      portfolioSection.style.display = "none";
-    }
-  }
-
-  // Render portfolio table rows
-  function renderPortfolio(portfolio){
-    const entries = Object.entries(portfolio);
-    if(entries.length === 0){
-      portfolioBody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No holdings yet.</td></tr>';
-      return;
-    }
-    portfolioBody.innerHTML = entries.map(([coin, qty]) => {
-      return \`<tr><td>\${coin.toUpperCase()}</td><td>\${qty.toFixed(4)}</td></tr>\`;
-    }).join("");
-  }
-
-  // Buy/Sell handler
-  async function buySellAction(coin, price, action){
-    if(!token){
-      alert("Please login first.");
-      return;
-    }
-    if(!walletPublicKey){
-      alert("Please connect your Phantom wallet first.");
-      return;
-    }
-    if(coin !== "sol") {
-      alert("Demo supports buy/sell only for SOL token.");
-      return;
-    }
-    const amountStr = prompt(\`Enter amount of SOL to \${action} (max 1 SOL for demo):\`);
-    const amount = parseFloat(amountStr);
-    if(isNaN(amount) || amount <= 0 || amount > 1){
-      alert("Invalid amount. Please enter a number between 0 and 1.");
-      return;
-    }
-    try {
-      await performSolanaTx(coin, amount, action);
-    } catch(e) {
-      alert("Transaction failed: " + e.message);
-    }
-  }
-
-  // Perform Solana transaction on Devnet
-  async function performSolanaTx(coin, amount, action){
-    if(!window.solana || !window.solana.isPhantom){
-      throw new Error("Phantom wallet not found");
-    }
-    if(!walletPublicKey){
-      const resp = await window.solana.connect();
-      walletPublicKey = resp.publicKey.toString();
-      walletAddressSpan.textContent = walletPublicKey.slice(0,4) + "..." + walletPublicKey.slice(-4);
-    }
-    const { PublicKey, Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL } = solanaWeb3;
-    const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-    const userPubKey = new PublicKey(walletPublicKey);
-    const exchangePubKey = new PublicKey(EXCHANGE_WALLET);
-    let tx;
-    if(action === "buy"){
-      alert("Buy simulated (no real transaction) because exchange wallet private key is not available.");
-      await updatePortfolio(coin, amount, action, "SIMULATED_TX");
-      await fetchPortfolio();
-      return;
-    } else if(action === "sell"){
-      const instruction = SystemProgram.transfer({
-        fromPubkey: userPubKey,
-        toPubkey: exchangePubKey,
-        lamports: amount * LAMPORTS_PER_SOL,
-      });
-      tx = new Transaction().add(instruction);
-    }
-    try {
-      const { signature } = await window.solana.signAndSendTransaction(tx);
-      await connection.confirmTransaction(signature, "confirmed");
-      alert(\`\${action.toUpperCase()} successful. Tx signature: \${signature}\`);
-      await updatePortfolio(coin, amount, action, signature);
-      await fetchPortfolio();
-    } catch(e) {
-      throw new Error(e.message || "Transaction failed");
-    }
-  }
-
-  // Update portfolio in backend after buy/sell
-  async function updatePortfolio(coin, quantity, action, txSignature){
-    try {
-      const res = await fetch(API.portfolioUpdate, {
-        method: "POST",
-        headers: {
-          "Content-Type":"application/json",
-          "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify({coin, quantity, action, txSignature})
-      });
-      if(!res.ok) throw new Error("Failed to update portfolio");
-      return await res.json();
-    } catch(e) {
-      alert("Portfolio update failed: " + e.message);
-    }
-  }
-
-  // Refresh UI on login
-  async function refreshUI(){
-    if(token){
-      loginBtn.style.display = "none";
-      logoutBtn.style.display = "inline-block";
-      connectWalletBtn.style.display = "inline-block";
-      await fetchCoins();
-      await fetchPortfolio();
-    } else {
-      loginBtn.style.display = "inline-block";
-      logoutBtn.style.display = "none";
-      connectWalletBtn.style.display = "inline-block";
-      portfolioSection.style.display = "none";
-    }
-  }
-
-  // Auto refresh coins every 60s
-  setInterval(fetchCoins, 60000);
-
-  // Init
-  refreshUI();
-})();
-</script>
-</body>
-</html>
-`;
