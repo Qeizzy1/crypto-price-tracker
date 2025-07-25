@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dexscreener Clone - Live Data</title>
+  <title>Dexscreener Clone - Live Data & Interactive</title>
   <style>
     /* Reset & base */
     * {
@@ -149,20 +149,19 @@
       border-left: 1px solid #21262d;
       padding: 1.5rem 2rem;
       overflow-y: auto;
+      user-select:none;
     }
     .details-symbol {
       font-size: 3.5rem;
       font-weight: 700;
       color: #58a6ff;
       margin: 0 0 0.15rem 0;
-      user-select:none;
     }
     .details-name {
       font-weight: 500;
       font-size: 1.25rem;
       color: #8b949e;
       margin: 0 0 1rem 0;
-      user-select:none;
     }
     .details-price {
       font-size: 2rem;
@@ -183,7 +182,6 @@
     .details-row {
       margin-bottom: 0.75rem;
       font-size: 0.95rem;
-      user-select:none;
     }
     /* Scrollbar styling */
     .table-wrapper::-webkit-scrollbar,
@@ -311,7 +309,7 @@
       </section>
     </main>
     <aside class="details-panel" role="complementary" aria-label="Token details panel">
-      <p style="color:#8b949e; font-size:1.25rem; user-select:none;">Select a token to view details</p>
+      <p style="color:#8b949e; font-size:1.25rem;">Select a token to view details</p>
     </aside>
   </div>
 
@@ -321,7 +319,7 @@
   let coinsData = [];
   let selectedIndex = null;
   let selectedRow = null;
-  const refreshInterval = 30000; // 30 seconds between API fetches
+  const refreshInterval = 30000; // 30 seconds
 
   // Draw sparkline on canvas
   function drawSparkline(canvas, prices) {
@@ -347,12 +345,11 @@
     ctx.stroke();
   }
 
-  // Format price nicely
   function formatPrice(p) {
+    if (p === null || p === undefined) return "-";
     if (p >= 1) return p.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6});
     else return p.toPrecision(4);
   }
-  // Format large numbers with suffixes
   function formatLargeNum(n) {
     if (n === null || n === undefined) return "-";
     if (n >= 1e12) return (n/1e12).toFixed(2) + "T";
@@ -361,20 +358,252 @@
     if (n >= 1e3) return (n/1e3).toFixed(2) + "K";
     return n.toFixed(2);
   }
-  // Format percent with sign
   function formatPercent(p) {
     if (p === null || p === undefined) return "-";
     return (p >= 0 ? "+" : "") + p.toFixed(2) + "%";
   }
 
-  // Linear regression slope for prediction (like before)
-  function linearRegression(prices) {
-    const n = prices.length;
-    const x = [...Array(n).keys()];
-    const sumX = x.reduce((a,b) => a+b, 0);
-    const sumY = prices.reduce((a,b) => a+b, 0);
-    const sumXY = x.reduce((acc, xi, i) => acc + xi * prices[i], 0);
-    const sumXX = x.reduce((acc, xi) => acc + xi * xi, 0);
-    const denominator = n * sumXX - sumX * sumX;
-    if (denominator === 0) return 0;
-    const a = (n * sumXY - su*
+  // Render table rows
+  function renderTable() {
+    tbody.innerHTML = "";
+    coinsData.forEach((coin, i) => {
+      const tr = document.createElement("tr");
+      tr.dataset.index = i;
+      if (i === selectedIndex) {
+        tr.classList.add("selected");
+      }
+      // Token cell with icon + name + symbol
+      const tdToken = document.createElement("td");
+      tdToken.style.display = "flex";
+      tdToken.style.alignItems = "center";
+      tdToken.style.gap = "0.6rem";
+
+      const img = document.createElement("img");
+      img.src = coin.image;
+      img.alt = coin.symbol.toUpperCase();
+      img.width = 24;
+      img.height = 24;
+      img.style.borderRadius = "50%";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = coin.name;
+
+      const symbolSpan = document.createElement("span");
+      symbolSpan.textContent = coin.symbol.toUpperCase();
+      symbolSpan.style.color = "#8b949e";
+      symbolSpan.style.fontSize = "0.85rem";
+
+      const nameWrapper = document.createElement("div");
+      nameWrapper.style.display = "flex";
+      nameWrapper.style.flexDirection = "column";
+      nameWrapper.appendChild(nameSpan);
+      nameWrapper.appendChild(symbolSpan);
+
+      tdToken.appendChild(img);
+      tdToken.appendChild(nameWrapper);
+
+      tr.appendChild(tdToken);
+
+      // Price
+      const tdPrice = document.createElement("td");
+      tdPrice.className = "price";
+      tdPrice.textContent = "$" + formatPrice(coin.current_price);
+      tr.appendChild(tdPrice);
+
+      // 24h Change
+      const tdChange = document.createElement("td");
+      tdChange.className = "change";
+      tdChange.textContent = formatPercent(coin.price_change_percentage_24h);
+      tdChange.classList.add(coin.price_change_percentage_24h >= 0 ? "positive" : "negative");
+      tr.appendChild(tdChange);
+
+      // Volume
+      const tdVolume = document.createElement("td");
+      tdVolume.className = "volume";
+      tdVolume.textContent = "$" + formatLargeNum(coin.total_volume);
+      tr.appendChild(tdVolume);
+
+      // Liquidity - using market_cap as proxy
+      const tdLiquidity = document.createElement("td");
+      tdLiquidity.className = "liquidity";
+      tdLiquidity.textContent = "$" + formatLargeNum(coin.market_cap);
+      tr.appendChild(tdLiquidity);
+
+      // Market Cap
+      const tdMarketCap = document.createElement("td");
+      tdMarketCap.className = "marketcap";
+      tdMarketCap.textContent = "$" + formatLargeNum(coin.market_cap);
+      tr.appendChild(tdMarketCap);
+
+      // Sparkline 7d
+      const tdSparkline = document.createElement("td");
+      tdSparkline.className = "sparkline";
+      const canvas = document.createElement("canvas");
+      canvas.width = 100;
+      canvas.height = 24;
+      tdSparkline.appendChild(canvas);
+      tr.appendChild(tdSparkline);
+
+      drawSparkline(canvas, coin.sparkline_in_7d.price);
+
+      tbody.appendChild(tr);
+
+      // Click handler
+      tr.onclick = () => {
+        if (selectedRow) selectedRow.classList.remove("selected");
+        tr.classList.add("selected");
+        selectedRow = tr;
+        selectedIndex = i;
+        renderDetailsPanel(coin);
+      }
+    });
+  }
+
+  function renderDetailsPanel(coin) {
+    detailsPanel.innerHTML = "";
+    // Symbol & Name
+    const symbol = document.createElement("h1");
+    symbol.className = "details-symbol";
+    symbol.textContent = coin.symbol.toUpperCase();
+    const name = document.createElement("p");
+    name.className = "details-name";
+    name.textContent = coin.name;
+
+    // Price & Change
+    const price = document.createElement("p");
+    price.className = "details-price";
+    price.textContent = "$" + formatPrice(coin.current_price);
+    const change = document.createElement("p");
+    change.className = "details-change " + (coin.price_change_percentage_24h >= 0 ? "positive" : "negative");
+    change.textContent = formatPercent(coin.price_change_percentage_24h);
+
+    // Additional info rows
+    function createRow(label, val) {
+      const row = document.createElement("div");
+      row.className = "details-row";
+      row.innerHTML = `<strong>${label}: </strong>${val}`;
+      return row;
+    }
+
+    const marketCapRow = createRow("Market Cap", "$" + formatLargeNum(coin.market_cap));
+    const volumeRow = createRow("24h Volume", "$" + formatLargeNum(coin.total_volume));
+    const high24Row = createRow("24h High", "$" + formatPrice(coin.high_24h));
+    const low24Row = createRow("24h Low", "$" + formatPrice(coin.low_24h));
+    const circulatingSupplyRow = createRow("Circulating Supply", formatLargeNum(coin.circulating_supply));
+
+    // Price chart - canvas sparkline bigger & interactive
+    const chartWrapper = document.createElement("div");
+    chartWrapper.style.marginTop = "1rem";
+
+    const chartCanvas = document.createElement("canvas");
+    chartCanvas.width = 350;
+    chartCanvas.height = 100;
+    chartCanvas.style.borderRadius = "5px";
+    chartWrapper.appendChild(chartCanvas);
+
+    drawLineChart(chartCanvas, coin.sparkline_in_7d.price);
+
+    detailsPanel.appendChild(symbol);
+    detailsPanel.appendChild(name);
+    detailsPanel.appendChild(price);
+    detailsPanel.appendChild(change);
+    detailsPanel.appendChild(marketCapRow);
+    detailsPanel.appendChild(volumeRow);
+    detailsPanel.appendChild(high24Row);
+    detailsPanel.appendChild(low24Row);
+    detailsPanel.appendChild(circulatingSupplyRow);
+    detailsPanel.appendChild(chartWrapper);
+  }
+
+  // Draw bigger line chart with axes
+  function drawLineChart(canvas, prices) {
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    if (!prices || prices.length < 2) return;
+
+    const max = Math.max(...prices);
+    const min = Math.min(...prices);
+    const range = max - min || 1;
+
+    // Background gradient fill
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, "rgba(88, 166, 255, 0.3)");
+    gradient.addColorStop(1, "rgba(88, 166, 255, 0)");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    prices.forEach((p, i) => {
+      const x = (i / (prices.length - 1)) * w;
+      const y = h - ((p - min) / range) * h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // Stroke line
+    ctx.strokeStyle = "#58a6ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    prices.forEach((p, i) => {
+      const x = (i / (prices.length - 1)) * w;
+      const y = h - ((p - min) / range) * h;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Axes (optional)
+    ctx.strokeStyle = "#30363d";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, h);
+    ctx.lineTo(w, h);
+    ctx.stroke();
+  }
+
+  // Fetch coins data from CoinGecko
+  async function fetchCoins() {
+    try {
+      // top 50 coins by market cap with sparkline
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=true&price_change_percentage=24h"
+      );
+      if (!res.ok) throw new Error("Network error");
+      const data = await res.json();
+      coinsData = data;
+      renderTable();
+
+      // If no selection, select the first coin automatically
+      if (selectedIndex === null && coinsData.length > 0) {
+        selectedIndex = 0;
+        const firstRow = tbody.querySelector("tr");
+        if (firstRow) {
+          firstRow.classList.add("selected");
+          selectedRow = firstRow;
+          renderDetailsPanel(coinsData[0]);
+        }
+      } else if (selectedIndex !== null) {
+        // Update details panel with updated data
+        renderDetailsPanel(coinsData[selectedIndex]);
+      }
+    } catch (error) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem; color:#f85149;">Failed to load data: ${error.message}</td></tr>`;
+      detailsPanel.innerHTML = `<p style="color:#f85149;">Failed to load details.</p>`;
+      console.error("Fetch coins error:", error);
+    }
+  }
+
+  // Initial load
+  fetchCoins();
+
+  // Auto-refresh every 30s
+  setInterval(fetchCoins, refreshInterval);
+</script>
+</body>
+</html>
