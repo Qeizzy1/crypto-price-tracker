@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dexscreener UI Clone</title>
+<title>Dexscreener UI Clone with 50 Coins</title>
 <style>
   /* Reset */
   * {
@@ -155,26 +155,6 @@
     color: #79c0ff;
   }
 
-  /* Buttons */
-  .btn {
-    margin-top: 1.5rem;
-    padding: 0.5rem 1.5rem;
-    font-weight: 600;
-    font-size: 1rem;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    background-color: #2382f7;
-    color: white;
-    box-shadow: 0 4px 12px rgb(35 130 247 / 0.5);
-    transition: background-color 0.2s ease;
-  }
-
-  .btn:hover {
-    background-color: #0f5bd1;
-    box-shadow: 0 6px 16px rgb(15 91 209 / 0.7);
-  }
-
   /* Scrollbar styling for sidebar */
   .coin-list::-webkit-scrollbar {
     width: 8px;
@@ -224,58 +204,121 @@
             <th class="change">24h %</th>
           </tr>
         </thead>
-        <tbody>
-          <tr class="selected">
-            <td>BTC</td>
-            <td class="price">$29,500.13</td>
-            <td class="change positive">+2.45%</td>
-          </tr>
-          <tr>
-            <td>ETH</td>
-            <td class="price">$1,872.50</td>
-            <td class="change positive">+1.22%</td>
-          </tr>
-          <tr>
-            <td>SOL</td>
-            <td class="price">$34.11</td>
-            <td class="change negative">-0.45%</td>
-          </tr>
-          <tr>
-            <td>ADA</td>
-            <td class="price">$0.51</td>
-            <td class="change positive">+3.12%</td>
-          </tr>
-          <tr>
-            <td>BNB</td>
-            <td class="price">$319.55</td>
-            <td class="change positive">+0.80%</td>
-          </tr>
-          <!-- Add more rows as needed -->
+        <tbody id="coin-tbody">
+          <!-- Coins get inserted here by JS -->
         </tbody>
       </table>
     </div>
   </aside>
 
   <main class="main-content">
-    <div class="details-card">
-      <h1 class="details-symbol">BTC</h1>
-      <h3 class="details-name">Bitcoin</h3>
-      <p class="details-price">
-        <strong>Current Price:</strong> $29,500.13
-      </p>
-      <p class="details-change positive">
-        Gone up: +2.45%
-      </p>
-      <p class="details-expected">
-        Expected to go up: 5.12%
-      </p>
-      <button class="btn">Buy</button>
-      <button class="btn" style="margin-left: 1rem; background-color: #f85149; box-shadow: 0 4px 12px rgb(248 81 73 / 0.5);">
-        Sell
-      </button>
+    <div class="details-card" id="details-card">
+      <!-- Details get inserted here by JS -->
+      <p style="color:#8b949e; font-size:1.25rem;">Select a coin from the list</p>
     </div>
   </main>
 </div>
+
+<script>
+  // Generate 50 sample coins with random data
+  const coinSymbols = [
+    "BTC", "ETH", "SOL", "ADA", "BNB", "XRP", "DOT", "DOGE", "LTC", "SHIB",
+    "AVAX", "MATIC", "TRX", "LINK", "ATOM", "ALGO", "FIL", "XLM", "VET", "ICP",
+    "THETA", "NEO", "EOS", "XTZ", "KSM", "AAVE", "MKR", "COMP", "SUSHI", "YFI",
+    "CRV", "ZRX", "BAL", "SNX", "REN", "UMA", "GRT", "BAT", "1INCH", "CEL",
+    "CHZ", "ENJ", "DASH", "QTUM", "NANO", "ZIL", "HOT", "WAVES", "KNC", "OMG"
+  ];
+
+  function randomPrice() {
+    return (Math.random() * 50000 + 0.01).toFixed(4);
+  }
+
+  function randomChange() {
+    return (Math.random() * 20 - 10).toFixed(2); // from -10% to +10%
+  }
+
+  function randomExpectedUp() {
+    return (Math.random() * 15).toFixed(2);
+  }
+
+  const coins = coinSymbols.map((sym, i) => ({
+    id: i + 1,
+    symbol: sym,
+    name: sym + " Coin",
+    price: randomPrice(),
+    changePercent: randomChange(),
+    expectedUpPercent: randomExpectedUp(),
+  }));
+
+  const tbody = document.getElementById("coin-tbody");
+  const detailsCard = document.getElementById("details-card");
+
+  let selectedRow = null;
+  let selectedCoin = null;
+
+  function renderCoins() {
+    coins.forEach((coin, index) => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = coin.id;
+
+      // Symbol cell
+      const tdSymbol = document.createElement("td");
+      tdSymbol.textContent = coin.symbol;
+      tr.appendChild(tdSymbol);
+
+      // Price cell
+      const tdPrice = document.createElement("td");
+      tdPrice.textContent = "$" + coin.price;
+      tdPrice.classList.add("price");
+      tr.appendChild(tdPrice);
+
+      // Change cell
+      const tdChange = document.createElement("td");
+      tdChange.textContent = (coin.changePercent >= 0 ? "+" : "") + coin.changePercent + "%";
+      tdChange.classList.add("change");
+      tdChange.classList.add(coin.changePercent >= 0 ? "positive" : "negative");
+      tr.appendChild(tdChange);
+
+      // Click event to select coin
+      tr.addEventListener("click", () => {
+        selectCoin(coin, tr);
+      });
+
+      tbody.appendChild(tr);
+
+      // Auto select first coin
+      if (index === 0) {
+        selectCoin(coin, tr);
+      }
+    });
+  }
+
+  function selectCoin(coin, row) {
+    selectedCoin = coin;
+
+    // Update details panel
+    detailsCard.innerHTML = `
+      <h1 class="details-symbol">${coin.symbol}</h1>
+      <h3 class="details-name">${coin.name}</h3>
+      <p class="details-price"><strong>Current Price:</strong> $${coin.price}</p>
+      <p class="details-change ${coin.changePercent >= 0 ? "positive" : "negative"}">
+        Gone up: ${coin.changePercent >= 0 ? "+" : ""}${coin.changePercent}%
+      </p>
+      <p class="details-expected">
+        Expected to go up: ${coin.expectedUpPercent}%
+      </p>
+    `;
+
+    // Highlight selected row
+    if (selectedRow) {
+      selectedRow.classList.remove("selected");
+    }
+    selectedRow = row;
+    selectedRow.classList.add("selected");
+  }
+
+  renderCoins();
+</script>
 
 </body>
 </html>
