@@ -1,84 +1,333 @@
+// vexapi.js - Single-file Express + frontend app
+
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const fetch = require("node-fetch");
+const path = require("path");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = "YOUR_SECRET_KEY_CHANGE_THIS";
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// In-memory DB simulation
+const users = {}; // username => { passwordHash, portfolio: {coinSymbol: qty} }
+
+// Middleware to protect routes
+function authMiddleware(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: "Unauthorized" });
+  const token = auth.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded.username;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// Routes
+app.post("/api/signup", async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password)
+    return res.status(400).json({ error: "Missing username or password" });
+  if (users[username]) return res.status(400).json({ error: "User exists" });
+
+  const hash = await bcrypt.hash(password, 10);
+  users[username] = { passwordHash: hash, portfolio: {} };
+  res.json({ message: "User created" });
+});
+
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password)
+    return res.status(400).json({ error: "Missing username or password" });
+  const user = users[username];
+  if (!user) return res.status(400).json({ error: "Invalid username or password" });
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) return res.status(400).json({ error: "Invalid username or password" });
+
+  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "6h" });
+  res.json({ token });
+});
+
+app.get("/api/coins", async (req, res) => {
+  try {
+    const cgRes = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false");
+    const coins = await cgRes.json();
+    res.json(coins);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch coins" });
+  }
+});
+
+app.get("/api/portfolio", authMiddleware, (req, res) => {
+  const user = users[req.user];
+  res.json(user.portfolio);
+});
+
+app.post("/api/buy", authMiddleware, (req, res) => {
+  const { coin, quantity } = req.body;
+  if (!coin || !quantity || quantity <= 0)
+    return res.status(400).json({ error: "Invalid input" });
+  const user = users[req.user];
+  user.portfolio[coin] = (user.portfolio[coin] || 0) + quantity;
+  res.json({ message: `Bought ${quantity} of ${coin}` });
+});
+
+app.post("/api/sell", authMiddleware, (req, res) => {
+  const { coin, quantity } = req.body;
+  if (!coin || !quantity || quantity <= 0)
+    return res.status(400).json({ error: "Invalid input" });
+  const user = users[req.user];
+  const owned = user.portfolio[coin] || 0;
+  if (quantity > owned)
+    return res.status(400).json({ error: "Not enough coins to sell" });
+  user.portfolio[coin] = owned - quantity;
+  if (user.portfolio[coin] <= 0) delete user.portfolio[coin];
+  res.json({ message: `Sold ${quantity} of ${coin}` });
+});
+
+// Serve frontend
+app.get("/", (req, res) => {
+  res.send(htmlContent);
+});
+
+app.listen(PORT, () => {
+  console.log(`VexApi running on http://localhost:${PORT}`);
+});
+
+
+// ---- HTML + JS Frontend content ----
+
+const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>VexApi</title>
+  <title>VexApi - High Tech Crypto Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      background-color: #0d1117;
-      color: #e6edf3;
-      font-family: Arial, sans-serif;
+      background: #0c1a2b;
+      color: #b0d9ff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 0;
     }
     header {
-      background: #161b22;
+      background: #0a1623;
       padding: 15px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid #064273;
     }
     header h1 {
+      color: #00c6ff;
       margin: 0;
-      font-size: 24px;
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing: 2px;
+      user-select: none;
     }
-    .wallet, .auth {
+    .auth-section {
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: 15px;
     }
-    input[type="text"] {
-      width: 200px;
-      padding: 6px;
-      border-radius: 4px;
+    button {
+      background: #007acc;
       border: none;
+      padding: 7px 14px;
+      color: white;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
     }
-    .coin-table {
-      width: 100%;
+    button:hover {
+      background: #005f99;
+    }
+    button:disabled {
+      background: #004066;
+      cursor: not-allowed;
+    }
+    input[type="text"], input[type="password"] {
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+      width: 180px;
+      background: #06335c;
+      color: #a7c6db;
+    }
+    #searchBar {
+      margin: 20px auto;
+      display: block;
+      width: 90%;
+      max-width: 600px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: #06335c;
+      color: #a7c6db;
+      user-select: text;
+    }
+    table {
+      width: 90%;
+      margin: 0 auto 40px auto;
       border-collapse: collapse;
-      margin-top: 10px;
+      background: #072341;
+      box-shadow: 0 0 15px #055a9e;
+      border-radius: 8px;
+      overflow: hidden;
+      user-select: none;
     }
     th, td {
-      padding: 10px;
-      border-bottom: 1px solid #30363d;
-      text-align: left;
+      padding: 14px 18px;
+      text-align: center;
+      border-bottom: 1px solid #024a87;
     }
-    .price-up { color: #00ff99; }
-    .price-down { color: #ff5c5c; }
-    button {
-      background: #2ea043;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 3px;
+    th {
+      background: #045aa7;
+      color: #c4e8ff;
+      font-weight: 700;
       cursor: pointer;
+      user-select: none;
     }
-    button.sell {
-      background: #da3633;
+    tr:hover {
+      background: #0c3a6e;
     }
-    .search-bar {
-      margin: 20px;
-      display: flex;
-      justify-content: center;
+    .price-up {
+      color: #00ffae;
+      font-weight: 700;
+    }
+    .price-down {
+      color: #ff6b6b;
+      font-weight: 700;
+    }
+    .btn-buy {
+      background: #00c853;
+      transition: background 0.3s ease;
+    }
+    .btn-buy:hover {
+      background: #009624;
+    }
+    .btn-sell {
+      background: #ff1744;
+      transition: background 0.3s ease;
+    }
+    .btn-sell:hover {
+      background: #b2102a;
+    }
+    #portfolio {
+      max-width: 900px;
+      margin: 20px auto 60px auto;
+      background: #072341;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px #055a9e;
+      color: #cde5ff;
+      user-select: none;
+    }
+    #portfolio h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-weight: 700;
+      color: #00c6ff;
+      user-select: none;
+    }
+    #portfolio table {
+      width: 100%;
+      margin: 0;
+      box-shadow: none;
+    }
+    #portfolio th, #portfolio td {
+      padding: 10px;
+      font-size: 16px;
     }
     #loginModal {
       display: none;
       position: fixed;
-      top: 20%;
+      top: 50%;
       left: 50%;
-      transform: translate(-50%);
-      background: #1c1f24;
-      padding: 20px;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      z-index: 1000;
+      transform: translate(-50%, -50%);
+      background: #072341;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 30px #00c6ffcc;
+      z-index: 10000;
+      color: #cde5ff;
+      user-select: none;
+    }
+    #loginModal.active {
+      display: block;
+    }
+    #loginModal h2 {
+      margin: 0 0 15px 0;
+      font-weight: 900;
+      color: #00c6ff;
     }
     #loginModal input {
-      margin-bottom: 10px;
-      width: 100%;
-      padding: 8px;
-      border-radius: 4px;
+      width: 280px;
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
       border: none;
+      background: #054e8c;
+      color: #cde5ff;
+      user-select: text;
+    }
+    #loginModal button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      background: #00c6ff;
+      color: #001f33;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    #loginModal button:hover {
+      background: #007aaf;
+    }
+    #loginModal .toggle-login {
+      margin-top: 10px;
+      text-align: center;
+      color: #55bbff;
+      cursor: pointer;
+      font-weight: 600;
+      user-select: none;
+    }
+    #statusMsg {
+      text-align: center;
+      margin: 20px;
+      color: #00c6ff;
+      font-weight: 700;
+      user-select: none;
+    }
+    #walletAddr {
+      font-family: monospace;
+      color: #00ffa6;
+      font-weight: 700;
+      user-select: text;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -86,118 +335,165 @@
 
 <header>
   <h1>VexApi</h1>
-  <div class="auth">
-    <button onclick="showLogin()">Login / Sign Up</button>
-    <button onclick="connectWallet()">Connect Wallet</button>
+  <div class="auth-section" id="authSection">
+    <button id="loginBtn">Login / Signup</button>
+    <button id="connectWalletBtn">Connect Wallet</button>
+    <span id="walletAddr"></span>
+    <button id="logoutBtn" style="display:none;">Logout</button>
   </div>
 </header>
 
-<div class="search-bar">
-  <input type="text" id="search" placeholder="Search coins..." />
-</div>
+<input type="text" id="searchBar" placeholder="Search coins..." />
 
-<div style="overflow-x:auto;">
-  <table class="coin-table" id="coin-table">
+<table id="coinsTable" aria-label="Cryptocurrency Prices">
+  <thead>
+    <tr>
+      <th data-sort="name">Name</th>
+      <th data-sort="symbol">Symbol</th>
+      <th data-sort="current_price">Price (USD)</th>
+      <th data-sort="price_change_percentage_24h">24h Change</th>
+      <th>Buy / Sell</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td colspan="5" style="text-align:center;">Loading coins...</td></tr>
+  </tbody>
+</table>
+
+<section id="portfolio" aria-label="User Portfolio" style="display:none;">
+  <h2>Your Portfolio</h2>
+  <table id="portfolioTable" aria-live="polite">
     <thead>
-      <tr>
-        <th>Name</th>
-        <th>Symbol</th>
-        <th>Price</th>
-        <th>Change 24h</th>
-        <th>Actions</th>
-      </tr>
+      <tr><th>Coin</th><th>Quantity</th></tr>
     </thead>
-    <tbody id="coin-body"></tbody>
+    <tbody>
+      <tr><td colspan="2" style="text-align:center;">No holdings yet.</td></tr>
+    </tbody>
   </table>
+</section>
+
+<div id="loginModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <h2 id="modalTitle">Login</h2>
+  <input type="text" id="usernameInput" placeholder="Username" autocomplete="username" />
+  <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password" />
+  <button id="submitLogin">Submit</button>
+  <div class="toggle-login" id="toggleLoginMode">Don't have an account? Signup</div>
 </div>
 
-<!-- Login Modal -->
-<div id="loginModal">
-  <h3>Login / Sign Up</h3>
-  <input type="text" id="username" placeholder="Username" />
-  <input type="password" id="password" placeholder="Password" />
-  <button onclick="login()">Submit</button>
-</div>
+<div id="statusMsg" aria-live="polite"></div>
 
 <script>
-  let coins = [], user = null, wallet = null;
+  (() => {
+    let coins = [];
+    let filteredCoins = [];
+    let token = null;
+    let walletAddress = null;
+    let portfolio = {};
+    let loginMode = "login";
 
-  async function fetchCoins() {
-    const res = await fetch('https://api.coinlore.net/api/tickers/?start=0&limit=100');
-    const data = await res.json();
-    coins = data.data;
-    renderCoins(coins);
-  }
+    const coinsTableBody = document.querySelector("#coinsTable tbody");
+    const portfolioSection = document.getElementById("portfolio");
+    const portfolioTableBody = document.querySelector("#portfolioTable tbody");
+    const loginModal = document.getElementById("loginModal");
+    const usernameInput = document.getElementById("usernameInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const submitLoginBtn = document.getElementById("submitLogin");
+    const toggleLoginModeText = document.getElementById("toggleLoginMode");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const walletAddrSpan = document.getElementById("walletAddr");
+    const statusMsg = document.getElementById("statusMsg");
+    const searchBar = document.getElementById("searchBar");
+    const authSection = document.getElementById("authSection");
 
-  function renderCoins(list) {
-    const tbody = document.getElementById("coin-body");
-    tbody.innerHTML = "";
-    list.forEach(coin => {
-      const row = document.createElement("tr");
-      const priceChangeClass = coin.percent_change_24h >= 0 ? "price-up" : "price-down";
-      row.innerHTML = `
-        <td>${coin.name}</td>
-        <td>${coin.symbol}</td>
-        <td>$${Number(coin.price_usd).toFixed(4)}</td>
-        <td class="${priceChangeClass}">${coin.percent_change_24h}%</td>
-        <td>
-          <button onclick="buyCoin('${coin.name}')">Buy</button>
-          <button class="sell" onclick="sellCoin('${coin.name}')">Sell</button>
-        </td>`;
-      tbody.appendChild(row);
-    });
-  }
+    function setStatus(msg, error=false) {
+      statusMsg.textContent = msg;
+      statusMsg.style.color = error ? "#ff5c5c" : "#00c6ff";
+    }
 
-  function buyCoin(name) {
-    alert(`🟢 Bought demo ${name}!`);
-    savePortfolio(name, 1);
-  }
+    function clearStatus() {
+      statusMsg.textContent = "";
+    }
 
-  function sellCoin(name) {
-    alert(`🔴 Sold demo ${name}!`);
-    savePortfolio(name, -1);
-  }
+    async function fetchCoins() {
+      try {
+        const res = await fetch("/api/coins");
+        coins = await res.json();
+        filteredCoins = coins;
+        renderCoins(filteredCoins);
+      } catch (e) {
+        coinsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#ff5c5c;">Failed to load coins.</td></tr>';
+      }
+    }
 
-  function connectWallet() {
-    if (window.solana && window.solana.isPhantom) {
-      window.solana.connect().then(acc => {
-        wallet = acc.publicKey.toString();
-        alert("Connected wallet: " + wallet);
+    function renderCoins(list) {
+      if (list.length === 0) {
+        coinsTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No coins found.</td></tr>';
+        return;
+      }
+      coinsTableBody.innerHTML = "";
+      for (const c of list) {
+        const priceChangeClass = c.price_change_percentage_24h >= 0 ? "price-up" : "price-down";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${c.name}</td>
+          <td>${c.symbol.toUpperCase()}</td>
+          <td>$${c.current_price.toFixed(4)}</td>
+          <td class="${priceChangeClass}">${c.price_change_percentage_24h?.toFixed(2)}%</td>
+          <td>
+            <button class="btn-buy" data-coin="${c.id}">Buy</button>
+            <button class="btn-sell" data-coin="${c.id}">Sell</button>
+          </td>`;
+        coinsTableBody.appendChild(row);
+      }
+      // Attach buy/sell handlers
+      document.querySelectorAll(".btn-buy").forEach(btn => {
+        btn.onclick = () => buyCoin(btn.getAttribute("data-coin"));
       });
-    } else {
-      alert("Phantom Wallet not found!");
+      document.querySelectorAll(".btn-sell").forEach(btn => {
+        btn.onclick = () => sellCoin(btn.getAttribute("data-coin"));
+      });
     }
-  }
 
-  function showLogin() {
-    document.getElementById("loginModal").style.display = "block";
-  }
-
-  function login() {
-    const userVal = document.getElementById("username").value;
-    const passVal = document.getElementById("password").value;
-    if (userVal && passVal) {
-      user = { username: userVal, portfolio: {} };
-      alert(`Welcome, ${user.username}!`);
-      document.getElementById("loginModal").style.display = "none";
+    function renderPortfolio() {
+      if (!token) {
+        portfolioSection.style.display = "none";
+        return;
+      }
+      portfolioSection.style.display = "block";
+      portfolioTableBody.innerHTML = "";
+      const keys = Object.keys(portfolio);
+      if (keys.length === 0) {
+        portfolioTableBody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No holdings yet.</td></tr>';
+        return;
+      }
+      keys.forEach(coin => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${coin}</td><td>${portfolio[coin]}</td>`;
+        portfolioTableBody.appendChild(tr);
+      });
     }
-  }
 
-  function savePortfolio(coinName, amount) {
-    if (!user) return alert("Login required");
-    if (!user.portfolio[coinName]) user.portfolio[coinName] = 0;
-    user.portfolio[coinName] += amount;
-  }
+    async function buyCoin(coinId) {
+      if (!token) {
+        alert("Login first!");
+        return;
+      }
+      // For demo, buy 1 unit
+      setStatus(`Buying 1 ${coinId}...`);
+      try {
+        const res = await fetch("/api/buy", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ coin: coinId, quantity: 1 }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          portfolio[coinId] = (portfolio[coinId] || 0) + 1;
+          renderPortfolio
 
-  document.getElementById("search").addEventListener("input", (e) => {
-    const query = e.target.value.toLowerCase();
-    const filtered = coins.filter(c =>
-      c.name.toLowerCase().includes(query) || c.symbol.toLowerCase().includes(query)
-    );
-    renderCoins(filtered);
-  });
-
-  fetchCoins();
-</script>
-</body>
-</html>
+    
